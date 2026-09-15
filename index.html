@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teia de Colaborações Musicais</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- D3.js v7 CDN -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0B0F17',
+              card: '#161F30',
+              accent: '#8B5CF6',
+              cyan: '#06B6D4',
+              pink: '#EC4899',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0B0F17;
+      color: #F3F4F6;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+    }
+    .node-label {
+      font-size: 11px;
+      font-weight: 600;
+      pointer-events: none;
+      text-anchor: middle;
+      fill: #E5E7EB;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+    .link {
+      stroke-opacity: 0.6;
+      transition: stroke-opacity 0.2s, stroke-width 0.2s;
+    }
+    .link:hover {
+      stroke-opacity: 1;
+      stroke-width: 4px !important;
+      cursor: pointer;
+    }
+    .node {
+      cursor: pointer;
+      transition: r 0.3s ease, filter 0.2s;
+    }
+    .node:hover {
+      filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.8));
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #0B0F17;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #1F2937;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col md:flex-row relative">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-4 right-4 z-50 bg-brand-accent text-white px-4 py-2 rounded-lg shadow-lg hidden transition-opacity duration-300 flex items-center space-x-2 text-sm">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span id="toast-msg">Ação realizada com sucesso!</span>
+  </div>
+
+  <!-- Sidebar / Controls Panel -->
+  <aside id="sidebar" class="w-full md:w-96 bg-brand-card border-r border-gray-800 flex flex-col h-1/2 md:h-full z-20 shadow-2xl transition-all duration-300">
+    <!-- Header -->
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="network" class="text-brand-accent w-6 h-6"></i>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-brand-accent via-brand-pink to-brand-cyan bg-clip-text text-transparent">
+          Music Graph
+        </h1>
+      </div>
+      <button id="reset-data-btn" title="Restaurar Dados Iniciais" class="text-gray-400 hover:text-red-400 p-1 rounded transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-gray-800 bg-gray-900/30 text-xs font-semibold text-gray-400">
+      <button id="tab-info-btn" onclick="switchTab('info')" class="flex-1 py-3 border-b-2 border-brand-accent text-brand-accent flex items-center justify-center space-x-1">
+        <i data-lucide="info" class="w-4 h-4"></i>
+        <span>Detalhes</span>
+      </button>
+      <button id="tab-add-btn" onclick="switchTab('add')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        <span>Adicionar</span>
+      </button>
+      <button id="tab-genres-btn" onclick="switchTab('genres')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+        <i data-lucide="palette" class="w-4 h-4"></i>
+        <span>Gêneros</span>
+      </button>
+      <button id="tab-settings-btn" onclick="switchTab('settings')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span>Ajustes</span>
+      </button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="flex-1 overflow-y-auto p-4 scrollbar-thin">
+      
+      <!-- TAB 1: DETAILS PANEL -->
+      <div id="tab-info" class="space-y-4">
+        <div id="no-selection" class="text-center py-10 text-gray-500 space-y-3">
+          <i data-lucide="mouse-pointer" class="w-10 h-10 mx-auto stroke-1 opacity-50"></i>
+          <p class="text-sm">Clique em um <strong>artista</strong> ou <strong>conexão</strong> no mapa para ver os detalhes.</p>
+        </div>
+
+        <!-- Node / Artist Info -->
+        <div id="artist-details" class="hidden space-y-4">
+          <div class="flex items-center space-x-3">
+            <div id="artist-avatar" class="w-14 h-14 rounded-full bg-brand-accent/20 border-2 border-brand-accent flex items-center justify-center text-xl font-bold text-brand-accent overflow-hidden bg-cover bg-center">
+              A
+            </div>
+            <div>
+              <h2 id="artist-name" class="text-xl font-bold text-white">Nome do Artista</h2>
+              <span id="artist-genre" class="inline-block px-2 py-0.5 text-xs rounded-full bg-purple-900/50 text-purple-300 border border-purple-700/50">Gênero</span>
+            </div>
+          </div>
+
+          <!-- Edit Artist Form -->
+          <form id="edit-artist-form" onsubmit="handleEditArtist(event)" class="space-y-3 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+            <h3 class="text-xs font-semibold uppercase text-gray-400">Editar Artista Selecionado</h3>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Nome</label>
+              <input type="text" id="edit-artist-name" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent" required>
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">Gênero</label>
+              <select id="edit-artist-genre" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent">
+              </select>
+            </div>
+            <div class="flex space-x-2 pt-1">
+              <button type="submit" class="flex-1 bg-brand-accent hover:bg-purple-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar Alterações</button>
+              <button type="button" onclick="deleteCurrentArtist()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1.5 rounded text-xs transition border border-red-500/30">Excluir</button>
+            </div>
+          </form>
+
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Colaborações (<span id="collab-count">0</span>)</h3>
+            <ul id="artist-collabs-list" class="space-y-2 text-sm">
+            </ul>
+          </div>
+        </div>
+
+        <!-- Edge / Link Info -->
+        <div id="link-details" class="hidden space-y-4">
+          <div class="bg-gray-900/60 p-4 rounded-lg border border-gray-800 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs text-brand-cyan font-semibold">FEAT / COLABORAÇÃO</span>
+                <h2 id="link-track-title" class="text-lg font-bold text-white">Nome da Faixa</h2>
+              </div>
+              <span id="link-year" class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono">2023</span>
+            </div>
+
+            <div id="link-artists-container" class="flex flex-wrap items-center justify-around gap-2 pt-2 border-t border-gray-800 text-sm">
+            </div>
+
+            <div id="spotify-player-container" class="pt-2">
+              <a id="spotify-search-btn" target="_blank" class="w-full bg-green-600 hover:bg-green-500 text-white text-xs py-2 px-3 rounded flex items-center justify-center space-x-2 font-semibold transition">
+                <i data-lucide="music-2" class="w-4 h-4"></i>
+                <span>Ouvir no Spotify</span>
+              </a>
+            </div>
+
+            <button onclick="deleteCurrentLink()" class="w-full mt-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 rounded transition border border-red-500/30">
+              Remover Colaboração
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: ADD NEW DATA -->
+      <div id="tab-add" class="hidden space-y-6">
+        
+        <!-- Add Artist -->
+        <form id="add-artist-form" onsubmit="handleAddArtist(event)" class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <h3 class="text-xs font-bold text-brand-accent uppercase tracking-wider flex items-center space-x-1">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Novo Artista (Busca Spotify)</span>
+          </h3>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Nome do Artista *</label>
+            <input type="text" id="new-artist-name" placeholder="Ex: BaianaSystem" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-accent" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Gênero Principal (Fallback caso não encontre no Spotify)</label>
+            <select id="new-artist-genre" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-accent">
+            </select>
+          </div>
+          <button type="submit" id="add-artist-submit-btn" class="w-full bg-brand-accent hover:bg-purple-600 text-white text-xs py-2 rounded font-semibold transition flex items-center justify-center space-x-2">
+            <span>Buscar e Cadastrar</span>
+          </button>
+        </form>
+
+        <!-- Add Link -->
+        <form id="add-link-form" onsubmit="handleAddLink(event)" class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <h3 class="text-xs font-bold text-brand-cyan uppercase tracking-wider flex items-center space-x-1">
+            <i data-lucide="link-2" class="w-4 h-4"></i>
+            <span>Nova Colaboração (Feat)</span>
+          </h3>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Artista Principal *</label>
+            <select id="link-artist1-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan" required>
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Artista 2 *</label>
+            <select id="link-artist2-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan" required>
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Artista 3 (Opcional)</label>
+            <select id="link-artist3-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+              <option value="">Nenhum (Apenas duo)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Nome da Faixa / Projeto</label>
+            <input type="text" id="link-track-input" placeholder="Ex: Deixa Fluir" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Ano de Lançamento</label>
+            <input type="number" id="link-year-input" value="2024" min="1950" max="2030" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+          </div>
+          <button type="submit" class="w-full bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-2 rounded font-semibold transition">
+            Conectar Artistas
+          </button>
+        </form>
+
+      </div>
+
+      <!-- TAB 3: GENRES & COLORS MANAGEMENT -->
+      <div id="tab-genres" class="hidden space-y-6">
+        <form id="add-genre-form" onsubmit="handleAddGenre(event)" class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <h3 class="text-xs font-bold text-brand-pink uppercase tracking-wider flex items-center space-x-1">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Novo Gênero Musical</span>
+          </h3>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Nome do Gênero *</label>
+            <input type="text" id="new-genre-name" placeholder="Ex: Samba, Reggae..." class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-pink" required>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Cor do Círculo</label>
+            <div class="flex items-center space-x-2">
+              <input type="color" id="new-genre-color" value="#10B981" class="h-8 w-14 bg-transparent border border-gray-700 rounded cursor-pointer">
+              <span class="text-xs text-gray-400">Escolha a cor de destaque</span>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-brand-pink hover:bg-pink-600 text-white text-xs py-2 rounded font-semibold transition">
+            Cadastrar Gênero
+          </button>
+        </form>
+
+        <div class="space-y-3">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Gerenciar Gêneros e Cores</h3>
+          <ul id="genres-manager-list" class="space-y-2">
+          </ul>
+        </div>
+      </div>
+
+      <!-- TAB 4: SETTINGS / PHYSICS & DATA EXPORT -->
+      <div id="tab-settings" class="hidden space-y-6">
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ajustes do Grafo</h3>
+          <div>
+            <label class="text-xs text-gray-400 flex justify-between mb-1">
+              <span>Repulsão dos Nós</span>
+              <span id="charge-val">-300</span>
+            </label>
+            <input type="range" id="slider-charge" min="-800" max="-50" value="-300" class="w-full accent-brand-accent" oninput="updatePhysics()">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 flex justify-between mb-1">
+              <span>Distância dos Links</span>
+              <span id="distance-val">100</span>
+            </label>
+            <input type="range" id="slider-distance" min="30" max="250" value="100" class="w-full accent-brand-accent" oninput="updatePhysics()">
+          </div>
+        </div>
+
+        <hr class="border-gray-800">
+
+        <div class="space-y-3">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Gerenciar Dados</h3>
+          <button onclick="exportJSON()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded flex items-center justify-center space-x-2 transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Exportar Grafo (JSON)</span>
+          </button>
+          
+          <label class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded flex items-center justify-center space-x-2 transition cursor-pointer">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>Importar Grafo (JSON)</span>
+            <input type="file" id="import-json-input" accept=".json" onchange="importJSON(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Main Graph Canvas -->
+  <main class="flex-1 relative h-1/2 md:h-full bg-brand-dark">
+    <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2 max-w-xl">
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+        <input type="text" id="search-input" placeholder="Buscar artista..." onkeyup="handleSearch()" class="bg-gray-900/80 backdrop-blur border border-gray-700 text-white text-sm rounded-full pl-9 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-brand-accent shadow-lg">
+      </div>
+      <select id="genre-filter" onchange="handleFilter()" class="bg-gray-900/80 backdrop-blur border border-gray-700 text-white text-sm rounded-full px-3 py-2 focus:outline-none focus:border-brand-accent shadow-lg">
+      </select>
+    </div>
+
+    <svg id="graph-svg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
+
+    <div class="absolute bottom-4 right-4 z-10 flex flex-col space-y-1 bg-gray-900/80 border border-gray-700 rounded-lg p-1 shadow-lg backdrop-blur">
+      <button onclick="zoomIn()" class="p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded transition"><i data-lucide="plus" class="w-4 h-4"></i></button>
+      <button onclick="resetZoom()" class="p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded transition"><i data-lucide="maximize-2" class="w-4 h-4"></i></button>
+      <button onclick="zoomOut()" class="p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded transition"><i data-lucide="minus" class="w-4 h-4"></i></button>
+    </div>
+  </main>
+
+  <script>
+    // --- SPOTIFY API CREDENTIALS ---
+    const spotifyClientId = 'e08e19e73af34e8c9a53095340701197';
+    const spotifyClientSecret = 'b642cfae5e214d5ba10c5ae23ce342f1';
+
+    // Helper para obter Token da API do Spotify
+    async function getSpotifyToken() {
+      const credentials = btoa(`${spotifyClientId}:${spotifyClientSecret}`);
+      try {
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${credentials}`
+          },
+          body: 'grant_type=client_credentials'
+        });
+
+        if (!response.ok) throw new Error('Falha ao autenticar no Spotify');
+        const data = await response.json();
+        return data.access_token;
+      } catch (error) {
+        console.error('Erro no Token Spotify:', error);
+        return null;
+      }
+    }
+
+    // Helper para buscar informações do artista via Spotify (TRATADO CONTRA ERRO '0' DE UNDEFINED)
+    async function fetchArtistFromSpotify(artistName) {
+      const token = await getSpotifyToken();
+      if (!token) return null;
+
+      try {
+        const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist&limit=1`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        
+        // Validação de segurança para garantir que o resultado existe
+        if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
+          console.warn('Nenhum artista retornado pelo Spotify.');
+          return null;
+        }
+
+        const artist = data.artists.items[0];
+
+        // Formatar gênero com fallback
+        let rawGenre = (artist.genres && artist.genres.length > 0) ? artist.genres[0] : 'Outro';
+        let formattedGenre = rawGenre.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+        return {
+          id: artist.id,
+          name: artist.name,
+          genre: formattedGenre,
+          image: artist.images && artist.images.length > 0 ? artist.images[0].url : '',
+          spotifyUrl: artist.external_urls ? artist.external_urls.spotify : ''
+        };
+      } catch (error) {
+        console.error('Erro ao buscar artista:', error);
+        return null;
+      }
+    }
+
+    // --- INITIAL SEED DATA ---
+    const defaultGenreColors = {
+      "Hip-Hop / Rap": "#8B5CF6", 
+      "MPB / Neo-Soul": "#EC4899", 
+      "Trap": "#06B6D4",          
+      "R&B": "#F59E0B",           
+      "Funk": "#10B981",          
+      "Pop": "#3B82F6",           
+      "Outro": "#9CA3AF"          
+    };
+
+    const defaultData = {
+      genreColors: { ...defaultGenreColors },
+      nodes: [
+        { id: "djonga", name: "Djonga", genre: "Hip-Hop / Rap" },
+        { id: "bk", name: "BK'", genre: "Hip-Hop / Rap" },
+        { id: "baco", name: "Baco Exu do Blues", genre: "Hip-Hop / Rap" },
+        { id: "liniker", name: "Liniker", genre: "MPB / Neo-Soul" },
+        { id: "luedji", name: "Luedji Luna", genre: "MPB / Neo-Soul" },
+        { id: "matuê", name: "Matuê", genre: "Trap" },
+        { id: "teto", name: "Teto", genre: "Trap" },
+        { id: "l7nnon", name: "L7NNON", genre: "Hip-Hop / Rap" }
+      ],
+      links: [
+        { artists: ["djonga", "bk"], track: "O Que Sobrou Disso", year: 2018 },
+        { artists: ["djonga", "baco"], track: "Fogo nos Racistas", year: 2019 },
+        { artists: ["bk", "luedji"], track: "Mundo Aberto", year: 2022 },
+        { artists: ["liniker", "luedji"], track: "Lina", year: 2021 },
+        { artists: ["baco", "liniker"], track: "Nua", year: 2022 },
+        { artists: ["matuê", "teto"], track: "M4", year: 2021 },
+        { artists: ["l7nnon", "djonga"], track: "Aviso", year: 2020 }
+      ]
+    };
+
+    let genreColors = { ...defaultGenreColors };
+
+    function normalizeLinks(links) {
+      return links.map(l => {
+        if (l.artists && Array.isArray(l.artists)) return l;
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        return { artists: [s, t], track: l.track, year: l.year };
+      });
+    }
+
+    let graphData = loadData();
+
+    function loadData() {
+      const saved = localStorage.getItem('music_graph_data');
+      if (saved) {
+        try { 
+          const parsed = JSON.parse(saved);
+          parsed.links = normalizeLinks(parsed.links);
+          if (parsed.genreColors) {
+            genreColors = parsed.genreColors;
+          } else {
+            parsed.genreColors = { ...defaultGenreColors };
+            genreColors = { ...defaultGenreColors };
+          }
+          return parsed;
+        } catch (e) { console.error(e); }
+      }
+      genreColors = { ...defaultGenreColors };
+      return JSON.parse(JSON.stringify(defaultData));
+    }
+
+    function saveData() {
+      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image }));
+      const cleanLinks = graphData.links.map(l => ({
+        artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
+        track: l.track,
+        year: l.year
+      }));
+      localStorage.setItem('music_graph_data', JSON.stringify({ 
+        nodes: cleanNodes, 
+        links: cleanLinks,
+        genreColors: genreColors
+      }));
+    }
+
+    // --- D3 GRAPH GLOBALS ---
+    let svg, g, simulation, linkSelection, nodeSelection, zoomBehavior;
+    let selectedNode = null;
+    let selectedLink = null;
+    let d3Edges = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initGraph();
+      populateDropdowns();
+      renderGenresManager();
+
+      document.getElementById('reset-data-btn').addEventListener('click', () => {
+        if (confirm("Deseja restaurar os dados originais? Suas adições serão apagadas.")) {
+          localStorage.removeItem('music_graph_data');
+          genreColors = { ...defaultGenreColors };
+          graphData = JSON.parse(JSON.stringify(defaultData));
+          updateGraph();
+          renderGenresManager();
+          showToast("Dados restaurados!");
+        }
+      });
+    });
+
+    function getNodeRadius(node) {
+      const count = graphData.links.reduce((acc, link) => {
+        const artistIds = link.artists.map(a => typeof a === 'object' ? a.id : a);
+        return artistIds.includes(node.id) ? acc + 1 : acc;
+      }, 0);
+
+      return Math.min(15 + count * 6, 45);
+    }
+
+    function initGraph() {
+      const container = document.querySelector('main');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      svg = d3.select("#graph-svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      svg.selectAll("*").remove();
+
+      g = svg.append("g");
+
+      zoomBehavior = d3.zoom()
+        .scaleExtent([0.2, 4])
+        .on("zoom", (event) => g.attr("transform", event.transform));
+
+      svg.call(zoomBehavior);
+
+      simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(d => d.id).distance(110))
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 12));
+
+      updateGraph();
+    }
+
+    function updateGraph() {
+      const nodes = graphData.nodes;
+      
+      d3Edges = [];
+      graphData.links.forEach(collab => {
+        const ids = collab.artists.map(a => typeof a === 'object' ? a.id : a);
+        for (let i = 0; i < ids.length; i++) {
+          for (let j = i + 1; j < ids.length; j++) {
+            d3Edges.push({
+              source: ids[i],
+              target: ids[j],
+              parentCollab: collab
+            });
+          }
+        }
+      });
+
+      // Update Links
+      linkSelection = g.selectAll(".link")
+        .data(d3Edges, d => {
+          const s = typeof d.source === 'object' ? d.source.id : d.source;
+          const t = typeof d.target === 'object' ? d.target.id : d.target;
+          return `${s}-${t}-${d.parentCollab.track}`;
+        });
+
+      linkSelection.exit().remove();
+
+      const linkEnter = linkSelection.enter()
+        .append("line")
+        .attr("class", "link")
+        .attr("stroke", "#4B5563")
+        .attr("stroke-width", 2)
+        .on("click", (event, d) => selectLink(d.parentCollab));
+
+      linkSelection = linkEnter.merge(linkSelection);
+
+      // Update Nodes
+      nodeSelection = g.selectAll(".node-group")
+        .data(nodes, d => d.id);
+
+      nodeSelection.exit().remove();
+
+      const nodeGroup = nodeSelection.enter()
+        .append("g")
+        .attr("class", "node-group")
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended));
+
+      nodeGroup.append("circle")
+        .attr("class", "node")
+        .attr("stroke", "#111827")
+        .attr("stroke-width", 2)
+        .on("click", (event, d) => selectNode(d));
+
+      nodeGroup.append("text")
+        .attr("class", "node-label")
+        .text(d => d.name);
+
+      nodeSelection = nodeGroup.merge(nodeSelection);
+
+      // Tamanho e estilo dinâmico
+      nodeSelection.select("circle")
+        .transition().duration(300)
+        .attr("r", d => getNodeRadius(d))
+        .attr("fill", d => genreColors[d.genre] || genreColors["Outro"] || "#9CA3AF");
+
+      nodeSelection.select("text")
+        .attr("dy", d => getNodeRadius(d) + 14);
+
+      simulation.force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 15));
+
+      // Physics restart
+      simulation.nodes(nodes).on("tick", ticked);
+      simulation.force("link").links(d3Edges);
+      simulation.alpha(0.5).restart();
+
+      populateDropdowns();
+      saveData();
+    }
+
+    function ticked() {
+      linkSelection
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      nodeSelection
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+    }
+
+    // Drag handlers
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // --- SELECTION LOGIC ---
+    function selectNode(node) {
+      selectedNode = node;
+      selectedLink = null;
+
+      const connectedNodeIds = new Set();
+      graphData.links.forEach(l => {
+        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
+        if (ids.includes(node.id)) {
+          ids.forEach(id => { if (id !== node.id) connectedNodeIds.add(id); });
+        }
+      });
+
+      nodeSelection.selectAll("circle")
+        .attr("opacity", d => d.id === node.id || connectedNodeIds.has(d.id) ? 1 : 0.2);
+
+      linkSelection
+        .attr("stroke", d => {
+          const ids = d.parentCollab.artists.map(a => typeof a === 'object' ? a.id : a);
+          return ids.includes(node.id) ? "#EC4899" : "#374151";
+        })
+        .attr("stroke-width", d => {
+          const ids = d.parentCollab.artists.map(a => typeof a === 'object' ? a.id : a);
+          return ids.includes(node.id) ? 3 : 1;
+        });
+
+      document.getElementById('no-selection').classList.add('hidden');
+      document.getElementById('link-details').classList.add('hidden');
+      document.getElementById('artist-details').classList.remove('hidden');
+
+      document.getElementById('artist-name').innerText = node.name;
+      document.getElementById('artist-genre').innerText = node.genre;
+      
+      const avatar = document.getElementById('artist-avatar');
+      if (node.image) {
+        avatar.style.backgroundImage = `url('${node.image}')`;
+        avatar.innerText = '';
+      } else {
+        avatar.style.backgroundImage = 'none';
+        avatar.innerText = node.name.charAt(0);
+      }
+      avatar.style.borderColor = genreColors[node.genre] || "#8B5CF6";
+
+      document.getElementById('edit-artist-name').value = node.name;
+      document.getElementById('edit-artist-genre').value = node.genre;
+
+      // Collabs List
+      const collabsList = document.getElementById('artist-collabs-list');
+      collabsList.innerHTML = '';
+
+      const collabs = graphData.links.filter(l => {
+        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
+        return ids.includes(node.id);
+      });
+
+      document.getElementById('collab-count').innerText = collabs.length;
+
+      collabs.forEach(c => {
+        const partnerNames = c.artists
+          .map(a => typeof a === 'object' ? a.id : a)
+          .filter(id => id !== node.id)
+          .map(id => {
+            const p = graphData.nodes.find(n => n.id === id);
+            return p ? p.name : id;
+          })
+          .join(" & ");
+
+        const li = document.createElement('li');
+        li.className = "bg-gray-900/80 p-2 rounded flex justify-between items-center border border-gray-800 cursor-pointer hover:border-brand-pink transition";
+        li.onclick = () => selectLink(c);
+        li.innerHTML = `
+          <div>
+            <span class="font-semibold text-gray-200">com ${partnerNames}</span>
+            <div class="text-xs text-gray-400">${c.track || 'Feat'} (${c.year || 'N/A'})</div>
+          </div>
+          <i data-lucide="music" class="w-4 h-4 text-brand-pink"></i>
+        `;
+        collabsList.appendChild(li);
+      });
+      lucide.createIcons();
+
+      switchTab('info');
+    }
+
+    function selectLink(link) {
+      selectedLink = link;
+      selectedNode = null;
+
+      linkSelection.attr("stroke", d => d.parentCollab === link ? "#06B6D4" : "#374151")
+                   .attr("stroke-width", d => d.parentCollab === link ? 4 : 1);
+
+      document.getElementById('no-selection').classList.add('hidden');
+      document.getElementById('artist-details').classList.add('hidden');
+      document.getElementById('link-details').classList.remove('hidden');
+
+      const trackTitle = link.track || "Colaboração";
+      document.getElementById('link-track-title').innerText = trackTitle;
+      document.getElementById('link-year').innerText = link.year || "N/A";
+
+      const artistContainer = document.getElementById('link-artists-container');
+      artistContainer.innerHTML = '';
+
+      const artistNames = [];
+      link.artists.forEach((artRef, index) => {
+        const id = typeof artRef === 'object' ? artRef.id : artRef;
+        const artist = graphData.nodes.find(n => n.id === id);
+        const name = artist ? artist.name : id;
+        artistNames.push(name);
+
+        const span = document.createElement('span');
+        span.className = "font-semibold text-brand-accent";
+        span.innerText = name;
+        artistContainer.appendChild(span);
+
+        if (index < link.artists.length - 1) {
+          const icon = document.createElement('i');
+          icon.setAttribute('data-lucide', 'plus');
+          icon.className = "w-3 h-3 text-gray-500";
+          artistContainer.appendChild(icon);
+        }
+      });
+      lucide.createIcons();
+
+      const spotifyBtn = document.getElementById('spotify-search-btn');
+      const searchQuery = encodeURIComponent(`${artistNames.join(" ")} ${trackTitle}`);
+      spotifyBtn.href = `https://open.spotify.com/search/${searchQuery}`;
+
+      switchTab('info');
+    }
+
+    // --- FORM ACTIONS ---
+    async function handleAddArtist(e) {
+      e.preventDefault();
+      const inputName = document.getElementById('new-artist-name').value.trim();
+      const fallbackGenre = document.getElementById('new-artist-genre').value;
+
+      if (!inputName) return;
+
+      const submitBtn = document.getElementById('add-artist-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Buscando no Spotify...';
+
+      showToast("Consultando a API do Spotify...");
+
+      const spotifyData = await fetchArtistFromSpotify(inputName);
+
+      let artistId, artistName, artistGenre, artistImage;
+
+      if (spotifyData) {
+        artistId = spotifyData.id;
+        artistName = spotifyData.name;
+        artistGenre = spotifyData.genre;
+        artistImage = spotifyData.image;
+      } else {
+        artistId = inputName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        artistName = inputName;
+        artistGenre = fallbackGenre || 'Outro';
+        artistImage = '';
+      }
+
+      if (graphData.nodes.some(n => n.id === artistId)) {
+        alert("Este artista já está cadastrado no grafo!");
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Buscar e Cadastrar';
+        return;
+      }
+
+      if (!genreColors[artistGenre]) {
+        const randomColors = ['#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
+        genreColors[artistGenre] = randomColors[Math.floor(Math.random() * randomColors.length)];
+      }
+
+      const newNode = { id: artistId, name: artistName, genre: artistGenre, image: artistImage };
+      graphData.nodes.push(newNode);
+      
+      updateGraph();
+      renderGenresManager();
+
+      document.getElementById('new-artist-name').value = '';
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Buscar e Cadastrar';
+
+      if (spotifyData) {
+        showToast(`"${artistName}" cadastrado via Spotify!`);
+      } else {
+        showToast(`"${artistName}" cadastrado manualmente.`);
+      }
+    }
+
+    function handleAddLink(e) {
+      e.preventDefault();
+      const a1 = document.getElementById('link-artist1-select').value;
+      const a2 = document.getElementById('link-artist2-select').value;
+      const a3 = document.getElementById('link-artist3-select').value;
+      const track = document.getElementById('link-track-input').value.trim();
+      const year = parseInt(document.getElementById('link-year-input').value) || 2024;
+
+      if (!a1 || !a2) {
+        alert("Selecione pelo menos os dois primeiros artistas.");
+        return;
+      }
+
+      const artists = [a1, a2];
+      if (a3) artists.push(a3);
+
+      const uniqueArtists = [...new Set(artists)];
+      if (uniqueArtists.length < artists.length) {
+        alert("Por favor, selecione artistas diferentes para a colaboração.");
+        return;
+      }
+
+      graphData.links.push({ artists: uniqueArtists, track, year });
+      updateGraph();
+
+      document.getElementById('link-track-input').value = '';
+      showToast("Conexão criada com sucesso!");
+    }
+
+    function handleEditArtist(e) {
+      e.preventDefault();
+      if (!selectedNode) return;
+
+      selectedNode.name = document.getElementById('edit-artist-name').value;
+      selectedNode.genre = document.getElementById('edit-artist-genre').value;
+
+      updateGraph();
+      selectNode(selectedNode);
+      showToast("Artista atualizado!");
+    }
+
+    function deleteCurrentArtist() {
+      if (!selectedNode) return;
+      if (!confirm(`Excluir ${selectedNode.name} e todas as suas colaborações?`)) return;
+
+      const id = selectedNode.id;
+      graphData.nodes = graphData.nodes.filter(n => n.id !== id);
+      graphData.links = graphData.links.filter(l => {
+        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
+        return !ids.includes(id);
+      });
+
+      selectedNode = null;
+      document.getElementById('artist-details').classList.add('hidden');
+      document.getElementById('no-selection').classList.remove('hidden');
+
+      updateGraph();
+      showToast("Artista removido.");
+    }
+
+    function deleteCurrentLink() {
+      if (!selectedLink) return;
+
+      graphData.links = graphData.links.filter(l => l !== selectedLink);
+      selectedLink = null;
+
+      document.getElementById('link-details').classList.add('hidden');
+      document.getElementById('no-selection').classList.remove('hidden');
+
+      updateGraph();
+      showToast("Colaboração removida.");
+    }
+
+    // --- GENRE MANAGEMENT ACTIONS ---
+    function handleAddGenre(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('new-genre-name');
+      const genreName = nameInput.value.trim();
+      const color = document.getElementById('new-genre-color').value;
+
+      if (!genreName) return;
+
+      if (genreColors[genreName]) {
+        alert("Este gênero já existe.");
+        return;
+      }
+
+      genreColors[genreName] = color;
+      nameInput.value = '';
+
+      updateGraph();
+      renderGenresManager();
+      showToast(`Gênero "${genreName}" adicionado!`);
+    }
+
+    function updateGenreColor(genre, color) {
+      genreColors[genre] = color;
+      updateGraph();
+      if (selectedNode && selectedNode.genre === genre) {
+        selectNode(selectedNode);
+      }
+    }
+
+    function deleteGenre(genre) {
+      if (genre === "Outro") {
+        alert("O gênero 'Outro' é o padrão do sistema e não pode ser excluído.");
+        return;
+      }
+
+      if (!confirm(`Excluir o gênero "${genre}"? Os artistas com este gênero passarão para "Outro".`)) return;
+
+      delete genreColors[genre];
+
+      if (!genreColors["Outro"]) {
+        genreColors["Outro"] = "#9CA3AF";
+      }
+
+      graphData.nodes.forEach(n => {
+        if (n.genre === genre) {
+          n.genre = "Outro";
+        }
+      });
+
+      updateGraph();
+      renderGenresManager();
+      showToast(`Gênero "${genre}" removido.`);
+    }
+
+    function renderGenresManager() {
+      const list = document.getElementById('genres-manager-list');
+      list.innerHTML = '';
+
+      Object.keys(genreColors).forEach(genre => {
+        const li = document.createElement('li');
+        li.className = "bg-gray-900/60 p-2.5 rounded-lg border border-gray-800 flex items-center justify-between";
+
+        const isDefault = genre === "Outro";
+
+        li.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <input type="color" value="${genreColors[genre]}" onchange="updateGenreColor('${genre}', this.value)" class="h-6 w-6 rounded border-0 bg-transparent cursor-pointer">
+            <span class="text-xs font-semibold text-gray-200">${genre}</span>
+          </div>
+          ${!isDefault ? `
+            <button onclick="deleteGenre('${genre}')" class="text-gray-500 hover:text-red-400 p-1 rounded transition" title="Excluir Gênero">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          ` : '<span class="text-[10px] text-gray-500 uppercase">Padrão</span>'}
+        `;
+
+        list.appendChild(li);
+      });
+
+      lucide.createIcons();
+    }
+
+    // --- EXPORT & IMPORT DATA ---
+    function exportJSON() {
+      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image }));
+      const cleanLinks = graphData.links.map(l => ({
+        artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
+        track: l.track,
+        year: l.year
+      }));
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ 
+        nodes: cleanNodes, 
+        links: cleanLinks,
+        genreColors: genreColors 
+      }, null, 2));
+
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `music_graph_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Exportação concluída!");
+    }
+
+    function importJSON(event) {
+      const fileReader = new FileReader();
+      fileReader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.nodes && parsed.links) {
+            parsed.links = normalizeLinks(parsed.links);
+            if (parsed.genreColors) {
+              genreColors = parsed.genreColors;
+            }
+            graphData = parsed;
+            updateGraph();
+            renderGenresManager();
+            showToast("Dados importados com sucesso!");
+          } else {
+            alert("Formato de arquivo JSON inválido.");
+          }
+        } catch (err) {
+          alert("Erro ao ler arquivo JSON.");
+        }
+      };
+      if (event.target.files[0]) {
+        fileReader.readAsText(event.target.files[0]);
+      }
+    }
+
+    // --- HELPERS & CONTROLS ---
+    function populateDropdowns() {
+      const s1 = document.getElementById('link-artist1-select');
+      const s2 = document.getElementById('link-artist2-select');
+      const s3 = document.getElementById('link-artist3-select');
+
+      const options = graphData.nodes
+        .slice()
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(n => `<option value="${n.id}">${n.name}</option>`)
+        .join('');
+
+      s1.innerHTML = '<option value="">Selecione...</option>' + options;
+      s2.innerHTML = '<option value="">Selecione...</option>' + options;
+      s3.innerHTML = '<option value="">Nenhum (Apenas duo)</option>' + options;
+
+      const genreOptions = Object.keys(genreColors)
+        .sort()
+        .map(g => `<option value="${g}">${g}</option>`)
+        .join('');
+
+      document.getElementById('new-artist-genre').innerHTML = genreOptions;
+      document.getElementById('edit-artist-genre').innerHTML = genreOptions;
+
+      const genreFilter = document.getElementById('genre-filter');
+      const currentFilter = genreFilter.value || 'ALL';
+      genreFilter.innerHTML = '<option value="ALL">Todos os Gêneros</option>' + genreOptions;
+      genreFilter.value = currentFilter;
+    }
+
+    function switchTab(tab) {
+      ['info', 'add', 'genres', 'settings'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}-btn`).classList.remove('border-brand-accent', 'text-brand-accent');
+        document.getElementById(`tab-${t}-btn`).classList.add('border-transparent');
+      });
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}-btn`).classList.add('border-brand-accent', 'text-brand-accent');
+    }
+
+    function handleSearch() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      if (!query) {
+        nodeSelection.attr("opacity", 1);
+        return;
+      }
+      nodeSelection.attr("opacity", d => d.name.toLowerCase().includes(query) ? 1 : 0.1);
+    }
+
+    function handleFilter() {
+      const genre = document.getElementById('genre-filter').value;
+      if (genre === 'ALL') {
+        nodeSelection.attr("opacity", 1);
+      } else {
+        nodeSelection.attr("opacity", d => d.genre === genre ? 1 : 0.1);
+      }
+    }
+
+    function updatePhysics() {
+      const charge = document.getElementById('slider-charge').value;
+      const distance = document.getElementById('slider-distance').value;
+
+      document.getElementById('charge-val').innerText = charge;
+      document.getElementById('distance-val').innerText = distance;
+
+      simulation.force("charge").strength(parseInt(charge));
+      simulation.force("link").distance(parseInt(distance));
+      simulation.alpha(0.3).restart();
+    }
+
+    function zoomIn() { svg.transition().call(zoomBehavior.scaleBy, 1.3); }
+    function zoomOut() { svg.transition().call(zoomBehavior.scaleBy, 0.7); }
+    function resetZoom() { svg.transition().call(zoomBehavior.transform, d3.zoomIdentity); }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>
