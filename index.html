@@ -43,6 +43,14 @@
       fill: #E5E7EB;
       text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     }
+    .node-initial {
+      font-size: 14px;
+      font-weight: 700;
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: central;
+      fill: #FFFFFF;
+    }
     .link {
       stroke-opacity: 0.6;
       transition: stroke-opacity 0.2s, stroke-width 0.2s;
@@ -52,11 +60,11 @@
       stroke-width: 4px !important;
       cursor: pointer;
     }
-    .node {
+    .node-circle {
       cursor: pointer;
       transition: r 0.3s ease, filter 0.2s;
     }
-    .node:hover {
+    .node-circle:hover {
       filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.8));
     }
     .scrollbar-thin::-webkit-scrollbar {
@@ -147,6 +155,10 @@
               <label class="text-xs text-gray-400 block mb-1">Gênero</label>
               <select id="edit-artist-genre" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent">
               </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 block mb-1">URL da Foto</label>
+              <input type="url" id="edit-artist-image" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent">
             </div>
             <div class="flex space-x-2 pt-1">
               <button type="submit" class="flex-1 bg-brand-accent hover:bg-purple-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar Alterações</button>
@@ -401,7 +413,7 @@
       }
     }
 
-    // --- INITIAL SEED DATA (CARREGADO DO SEU JSON RECENTE) ---
+    // --- INITIAL SEED DATA ---
     const defaultGenreColors = {
       "Hip-Hop / Rap": "#8B5CF6",
       "Outro": "#9CA3AF",
@@ -559,7 +571,7 @@
     }
 
     function saveData() {
-      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image }));
+      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image || "" }));
       const cleanLinks = graphData.links.map(l => ({
         artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
         track: l.track,
@@ -573,7 +585,7 @@
     }
 
     // --- D3 GRAPH GLOBALS ---
-    let svg, g, simulation, linkSelection, nodeSelection, zoomBehavior;
+    let svg, g, svgDefs, simulation, linkSelection, nodeSelection, zoomBehavior;
     let selectedNode = null;
     let selectedLink = null;
     let d3Edges = [];
@@ -616,6 +628,9 @@
 
       svg.selectAll("*").remove();
 
+      // SVG Defs para padrões de imagem (Patterns)
+      svgDefs = svg.append("defs");
+
       g = svg.append("g");
 
       zoomBehavior = d3.zoom()
@@ -633,9 +648,35 @@
       updateGraph();
     }
 
+    function updateDefs() {
+      const patterns = svgDefs.selectAll("pattern")
+        .data(graphData.nodes.filter(n => n.image), d => d.id);
+
+      patterns.exit().remove();
+
+      const enterPatterns = patterns.enter()
+        .append("pattern")
+        .attr("id", d => `pattern-${d.id}`)
+        .attr("patternUnits", "objectBoundingBox")
+        .attr("width", 1)
+        .attr("height", 1);
+
+      enterPatterns.append("image")
+        .attr("preserveAspectRatio", "xMidYMid slice");
+
+      const allPatterns = enterPatterns.merge(patterns);
+
+      allPatterns.select("image")
+        .attr("xlink:href", d => d.image)
+        .attr("width", d => getNodeRadius(d) * 2)
+        .attr("height", d => getNodeRadius(d) * 2);
+    }
+
     function updateGraph() {
       const nodes = graphData.nodes;
       
+      updateDefs();
+
       d3Edges = [];
       graphData.links.forEach(collab => {
         const ids = collab.artists.map(a => typeof a === 'object' ? a.id : a);
@@ -684,10 +725,12 @@
           .on("end", dragended));
 
       nodeGroup.append("circle")
-        .attr("class", "node")
-        .attr("stroke", "#111827")
-        .attr("stroke-width", 2)
+        .attr("class", "node-circle")
+        .attr("stroke-width", 2.5)
         .on("click", (event, d) => selectNode(d));
+
+      nodeGroup.append("text")
+        .attr("class", "node-initial");
 
       nodeGroup.append("text")
         .attr("class", "node-label")
@@ -695,12 +738,16 @@
 
       nodeSelection = nodeGroup.merge(nodeSelection);
 
-      nodeSelection.select("circle")
+      nodeSelection.select(".node-circle")
         .transition().duration(300)
         .attr("r", d => getNodeRadius(d))
-        .attr("fill", d => genreColors[d.genre] || genreColors["Outro"] || "#9CA3AF");
+        .attr("fill", d => d.image ? `url(#pattern-${d.id})` : (genreColors[d.genre] || genreColors["Outro"] || "#9CA3AF"))
+        .attr("stroke", d => genreColors[d.genre] || genreColors["Outro"] || "#8B5CF6");
 
-      nodeSelection.select("text")
+      nodeSelection.select(".node-initial")
+        .text(d => d.image ? "" : d.name.charAt(0).toUpperCase());
+
+      nodeSelection.select(".node-label")
         .attr("dy", d => getNodeRadius(d) + 14);
 
       simulation.force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 15));
@@ -754,7 +801,7 @@
         }
       });
 
-      nodeSelection.selectAll("circle")
+      nodeSelection.selectAll(".node-circle, .node-label, .node-initial")
         .attr("opacity", d => d.id === node.id || connectedNodeIds.has(d.id) ? 1 : 0.2);
 
       linkSelection
@@ -780,12 +827,13 @@
         avatar.innerText = '';
       } else {
         avatar.style.backgroundImage = 'none';
-        avatar.innerText = node.name.charAt(0);
+        avatar.innerText = node.name.charAt(0).toUpperCase();
       }
       avatar.style.borderColor = genreColors[node.genre] || "#8B5CF6";
 
       document.getElementById('edit-artist-name').value = node.name;
       document.getElementById('edit-artist-genre').value = node.genre;
+      document.getElementById('edit-artist-image').value = node.image || '';
 
       const collabsList = document.getElementById('artist-collabs-list');
       collabsList.innerHTML = '';
@@ -964,6 +1012,7 @@
 
       selectedNode.name = document.getElementById('edit-artist-name').value;
       selectedNode.genre = document.getElementById('edit-artist-genre').value;
+      selectedNode.image = document.getElementById('edit-artist-image').value.trim();
 
       updateGraph();
       selectNode(selectedNode);
@@ -1087,7 +1136,7 @@
 
     // --- EXPORT & IMPORT DATA ---
     function exportJSON() {
-      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image }));
+      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image || "" }));
       const cleanLinks = graphData.links.map(l => ({
         artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
         track: l.track,
@@ -1179,18 +1228,18 @@
     function handleSearch() {
       const query = document.getElementById('search-input').value.toLowerCase();
       if (!query) {
-        nodeSelection.attr("opacity", 1);
+        nodeSelection.selectAll(".node-circle, .node-label, .node-initial").attr("opacity", 1);
         return;
       }
-      nodeSelection.attr("opacity", d => d.name.toLowerCase().includes(query) ? 1 : 0.1);
+      nodeSelection.selectAll(".node-circle, .node-label, .node-initial").attr("opacity", d => d.name.toLowerCase().includes(query) ? 1 : 0.1);
     }
 
     function handleFilter() {
       const genre = document.getElementById('genre-filter').value;
       if (genre === 'ALL') {
-        nodeSelection.attr("opacity", 1);
+        nodeSelection.selectAll(".node-circle, .node-label, .node-initial").attr("opacity", 1);
       } else {
-        nodeSelection.attr("opacity", d => d.genre === genre ? 1 : 0.1);
+        nodeSelection.selectAll(".node-circle, .node-label, .node-initial").attr("opacity", d => d.genre === genre ? 1 : 0.1);
       }
     }
 
