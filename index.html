@@ -347,7 +347,6 @@
     const spotifyClientId = 'e08e19e73af34e8c9a53095340701197';
     const spotifyClientSecret = 'b642cfae5e214d5ba10c5ae23ce342f1';
 
-    // Helper para obter Token da API do Spotify
     async function getSpotifyToken() {
       const credentials = btoa(`${spotifyClientId}:${spotifyClientSecret}`);
       try {
@@ -369,7 +368,6 @@
       }
     }
 
-    // Helper para buscar informações do artista via Spotify (TRATADO CONTRA ERRO '0' DE UNDEFINED)
     async function fetchArtistFromSpotify(artistName) {
       const token = await getSpotifyToken();
       if (!token) return null;
@@ -381,15 +379,12 @@
 
         const data = await response.json();
         
-        // Validação de segurança para garantir que o resultado existe
         if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
           console.warn('Nenhum artista retornado pelo Spotify.');
           return null;
         }
 
         const artist = data.artists.items[0];
-
-        // Formatar gênero com fallback
         let rawGenre = (artist.genres && artist.genres.length > 0) ? artist.genres[0] : 'Outro';
         let formattedGenre = rawGenre.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -406,37 +401,128 @@
       }
     }
 
-    // --- INITIAL SEED DATA ---
+    // --- INITIAL SEED DATA (CARREGADO DO SEU JSON RECENTE) ---
     const defaultGenreColors = {
-      "Hip-Hop / Rap": "#8B5CF6", 
-      "MPB / Neo-Soul": "#EC4899", 
-      "Trap": "#06B6D4",          
-      "R&B": "#F59E0B",           
-      "Funk": "#10B981",          
-      "Pop": "#3B82F6",           
-      "Outro": "#9CA3AF"          
+      "Hip-Hop / Rap": "#8B5CF6",
+      "Outro": "#9CA3AF",
+      "K-Pop": "#ff47f0",
+      "R&B/Soul": "#0bd5fe"
     };
 
     const defaultData = {
-      genreColors: { ...defaultGenreColors },
-      nodes: [
-        { id: "djonga", name: "Djonga", genre: "Hip-Hop / Rap" },
-        { id: "bk", name: "BK'", genre: "Hip-Hop / Rap" },
-        { id: "baco", name: "Baco Exu do Blues", genre: "Hip-Hop / Rap" },
-        { id: "liniker", name: "Liniker", genre: "MPB / Neo-Soul" },
-        { id: "luedji", name: "Luedji Luna", genre: "MPB / Neo-Soul" },
-        { id: "matuê", name: "Matuê", genre: "Trap" },
-        { id: "teto", name: "Teto", genre: "Trap" },
-        { id: "l7nnon", name: "L7NNON", genre: "Hip-Hop / Rap" }
+      "genreColors": { ...defaultGenreColors },
+      "nodes": [
+        { "id": "g0nny", "name": "g0nny", "genre": "R&B/Soul" },
+        { "id": "crush", "name": "Crush", "genre": "R&B/Soul" },
+        { "id": "ziont", "name": "Zion.T", "genre": "R&B/Soul" },
+        { "id": "heize", "name": "Heize", "genre": "R&B/Soul" },
+        { "id": "wonstein", "name": "Wonstein", "genre": "Hip-Hop / Rap" },
+        { "id": "grizzly", "name": "Grizzly", "genre": "Outro" },
+        { "id": "cracker", "name": "Cracker", "genre": "R&B/Soul" },
+        { "id": "yerinbaek", "name": "Yerin Baek", "genre": "R&B/Soul" },
+        { "id": "sosoobin", "name": "So Soo Bin", "genre": "Outro" },
+        { "id": "kuonechan", "name": "Ku One Chan", "genre": "R&B/Soul" },
+        { "id": "samkim", "name": "Sam Kim", "genre": "R&B/Soul" },
+        { "id": "dean", "name": "DEAN", "genre": "Hip-Hop / Rap" },
+        { "id": "codekunst", "name": "CODE KUNST", "genre": "Hip-Hop / Rap" },
+        { "id": "colde", "name": "Colde", "genre": "R&B/Soul" },
+        { "id": "epikhigh", "name": "Epik High", "genre": "R&B/Soul" },
+        { "id": "leehi", "name": "Lee Hi", "genre": "R&B/Soul" },
+        { "id": "bibi", "name": "BIBI", "genre": "R&B/Soul" },
+        { "id": "zico", "name": "ZICO", "genre": "Hip-Hop / Rap" },
+        { "id": "primary", "name": "PRIMARY", "genre": "R&B/Soul" },
+        { "id": "george", "name": "George", "genre": "R&B/Soul" },
+        { "id": "sole", "name": "SOLE", "genre": "R&B/Soul" },
+        { "id": "thama", "name": "THAMA", "genre": "R&B/Soul" },
+        { "id": "loco", "name": "LOCO", "genre": "Hip-Hop / Rap" },
+        { "id": "youra", "name": "youra", "genre": "R&B/Soul" },
+        { "id": "cosmicboy", "name": "Cosmic Boy", "genre": "R&B/Soul" },
+        { "id": "basecamp", "name": "basecamp", "genre": "R&B/Soul" },
+        { "id": "hiko", "name": "hiko", "genre": "Outro" },
+        { "id": "moonsujin", "name": "Moon Sujin", "genre": "R&B/Soul" },
+        { "id": "davii", "name": "DAVII", "genre": "R&B/Soul" },
+        { "id": "minnie", "name": "MINNIE", "genre": "K-Pop" },
+        { "id": "joy", "name": "JOY", "genre": "K-Pop" },
+        { "id": "nayeon", "name": "NAYEON", "genre": "K-Pop" },
+        { "id": "gsoul", "name": "GSoul", "genre": "R&B/Soul" },
+        { "id": "hoody", "name": "Hoody", "genre": "R&B/Soul" },
+        { "id": "wheein", "name": "Whee In", "genre": "R&B/Soul" },
+        { "id": "bignaughty", "name": "Big Naughty", "genre": "Hip-Hop / Rap" },
+        { "id": "dynamicduo", "name": "Dynamic Duo", "genre": "Hip-Hop / Rap", "image": "" }
       ],
-      links: [
-        { artists: ["djonga", "bk"], track: "O Que Sobrou Disso", year: 2018 },
-        { artists: ["djonga", "baco"], track: "Fogo nos Racistas", year: 2019 },
-        { artists: ["bk", "luedji"], track: "Mundo Aberto", year: 2022 },
-        { artists: ["liniker", "luedji"], track: "Lina", year: 2021 },
-        { artists: ["baco", "liniker"], track: "Nua", year: 2022 },
-        { artists: ["matuê", "teto"], track: "M4", year: 2021 },
-        { artists: ["l7nnon", "djonga"], track: "Aviso", year: 2020 }
+      "links": [
+        { "artists": ["crush", "heize"], "track": "Late Autumn", "year": 2019 },
+        { "artists": ["crush", "ziont"], "track": "Two Melodies", "year": 2013 },
+        { "artists": ["crush", "ziont"], "track": "Just", "year": 2015 },
+        { "artists": ["kuonechan", "yerinbaek"], "track": "How did you", "year": 2018 },
+        { "artists": ["dean", "yerinbaek"], "track": "Come Over", "year": 2017 },
+        { "artists": ["codekunst", "yerinbaek"], "track": "Knock", "year": 2020 },
+        { "artists": ["dean", "crush"], "track": "What 2 Do", "year": 2016 },
+        { "artists": ["samkim", "crush"], "track": "Make Up", "year": 2018 },
+        { "artists": ["colde", "crush"], "track": "Your Dog Loves You", "year": 2018 },
+        { "artists": ["epikhigh", "crush"], "track": "Lovedrunk", "year": 2019 },
+        { "artists": ["crush", "leehi"], "track": "Tip Toe", "year": 2019 },
+        { "artists": ["bibi", "crush"], "track": "She Said", "year": 2020 },
+        { "artists": ["crush", "epikhigh"], "track": "Tukutz Thought", "year": 2024 },
+        { "artists": ["crush", "epikhigh"], "track": "Munbae-Dong", "year": 2017 },
+        { "artists": ["crush", "samkim"], "track": "No Sense", "year": 2016 },
+        { "artists": ["zico", "samkim"], "track": "It's You", "year": 2018 },
+        { "artists": ["primary", "samkim"], "track": "Bless You", "year": 2020 },
+        { "artists": ["samkim", "primary"], "track": "~42", "year": 2017 },
+        { "artists": ["bibi", "samkim"], "track": "Loveholic's Hangover", "year": 2022 },
+        { "artists": ["loco", "samkim"], "track": "Alright, Summer Time", "year": 2017 },
+        { "artists": ["samkim", "loco"], "track": "Think About' Chu", "year": 2017 },
+        { "artists": ["kuonechan", "g0nny"], "track": "REM sleep", "year": 2026 },
+        { "artists": ["cracker", "g0nny"], "track": "With You", "year": 2023 },
+        { "artists": ["samkim", "george"], "track": "aura", "year": 2019 },
+        { "artists": ["george", "sole", "thama"], "track": "bakehouse", "year": 2026 },
+        { "artists": ["cosmicboy", "george", "youra"], "track": "Can I Love?", "year": 2018 },
+        { "artists": ["george", "loco"], "track": "Just Like This", "year": 2023 },
+        { "artists": ["sole", "george"], "track": "MYSELF", "year": 2021 },
+        { "artists": ["sole", "thama"], "track": "RIDE", "year": 2017 },
+        { "artists": ["sole", "thama"], "track": "SAME", "year": 2019 },
+        { "artists": ["sole", "wonstein"], "track": "Stay With Me", "year": 2021 },
+        { "artists": ["basecamp", "sole"], "track": "love", "year": 2022 },
+        { "artists": ["sole", "thama"], "track": "Situationship", "year": 2024 },
+        { "artists": ["epikhigh", "wonstein"], "track": "Super Rare", "year": 2022 },
+        { "artists": ["kuonechan", "wonstein"], "track": "Scarecrow", "year": 2022 },
+        { "artists": ["moonsujin", "wonstein"], "track": "love me not", "year": 2026 },
+        { "artists": ["leehi", "wonstein"], "track": "H.S.K.T.", "year": 2021 },
+        { "artists": ["heize", "dean"], "track": "And July", "year": 2016 },
+        { "artists": ["heize", "dean"], "track": "Shut Up & Groove", "year": 2016 },
+        { "artists": ["heize", "colde"], "track": "So, It Ends?", "year": 2019 },
+        { "artists": ["heize", "george"], "track": "Sad Ending", "year": 2022 },
+        { "artists": ["epikhigh", "heize"], "track": "Based on a True Story", "year": 2021 },
+        { "artists": ["davii", "heize"], "track": "Navigation", "year": 2017 },
+        { "artists": ["davii", "heize"], "track": "Only Me", "year": 2017 },
+        { "artists": ["heize", "davii"], "track": "Wish You Well", "year": 2018 },
+        { "artists": ["heize", "davii"], "track": "But, I Am Your Buddy", "year": 2019 },
+        { "artists": ["heize", "minnie"], "track": "Thief", "year": 2022 },
+        { "artists": ["george", "minnie"], "track": "if i'm with you", "year": 2026 },
+        { "artists": ["heize", "colde"], "track": "DAUM", "year": 2019 },
+        { "artists": ["crush", "joy"], "track": "Mayday", "year": 2019 },
+        { "artists": ["joy", "wonstein"], "track": "Love Song", "year": 2022 },
+        { "artists": ["bibi", "dean"], "track": "Burn It", "year": 2024 },
+        { "artists": ["bibi", "zico"], "track": "Love & Hate", "year": 2020 },
+        { "artists": ["nayeon", "wonstein"], "track": "Love Countdown", "year": 2022 },
+        { "artists": ["nayeon", "samkim"], "track": "Heaven", "year": 2024 },
+        { "artists": ["loco", "minnie"], "track": "NOT OK", "year": 2023 },
+        { "artists": ["leehi", "crush"], "track": "For You", "year": 2020 },
+        { "artists": ["crush", "leehi"], "track": "Bad Habits", "year": 2023 },
+        { "artists": ["epikhigh", "leehi"], "track": "Rich Kids Anthem", "year": 2022 },
+        { "artists": ["epikhigh", "leehi"], "track": "HERE COME THE REGRETS", "year": 2018 },
+        { "artists": ["codekunst", "leehi"], "track": "X", "year": 2017 },
+        { "artists": ["epikhigh", "leehi"], "track": "HAPPEN ENDING", "year": 2014 },
+        { "artists": ["leehi", "gsoul"], "track": "NO WAY", "year": 2019 },
+        { "artists": ["codekunst", "gsoul"], "track": "FIRE WATER", "year": 2017 },
+        { "artists": ["moonsujin", "gsoul"], "track": "mine", "year": 2024 },
+        { "artists": ["wheein", "gsoul"], "track": "Butterfly", "year": 2021 },
+        { "artists": ["thama", "gsoul"], "track": "Blessed", "year": 2021 },
+        { "artists": ["epikhigh", "gsoul"], "track": "End of the World", "year": 2021 },
+        { "artists": ["gsoul", "zico"], "track": "ANTI", "year": 2017 },
+        { "artists": ["bignaughty", "sole"], "track": "Frank Ocean", "year": 2021 },
+        { "artists": ["bignaughty", "gsoul"], "track": "Bravo", "year": 2021 },
+        { "artists": ["hoody", "gsoul"], "track": "Game", "year": 2023 }
       ]
     };
 
@@ -499,13 +585,13 @@
       renderGenresManager();
 
       document.getElementById('reset-data-btn').addEventListener('click', () => {
-        if (confirm("Deseja restaurar os dados originais? Suas adições serão apagadas.")) {
+        if (confirm("Deseja restaurar os dados originais do JSON?")) {
           localStorage.removeItem('music_graph_data');
           genreColors = { ...defaultGenreColors };
           graphData = JSON.parse(JSON.stringify(defaultData));
           updateGraph();
           renderGenresManager();
-          showToast("Dados restaurados!");
+          showToast("Dados restaurados para o JSON!");
         }
       });
     });
@@ -516,7 +602,7 @@
         return artistIds.includes(node.id) ? acc + 1 : acc;
       }, 0);
 
-      return Math.min(15 + count * 6, 45);
+      return Math.min(15 + count * 5, 45);
     }
 
     function initGraph() {
@@ -609,7 +695,6 @@
 
       nodeSelection = nodeGroup.merge(nodeSelection);
 
-      // Tamanho e estilo dinâmico
       nodeSelection.select("circle")
         .transition().duration(300)
         .attr("r", d => getNodeRadius(d))
@@ -620,7 +705,6 @@
 
       simulation.force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 15));
 
-      // Physics restart
       simulation.nodes(nodes).on("tick", ticked);
       simulation.force("link").links(d3Edges);
       simulation.alpha(0.5).restart();
@@ -640,7 +724,6 @@
         .attr("transform", d => `translate(${d.x},${d.y})`);
     }
 
-    // Drag handlers
     function dragstarted(event, d) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
       d.fx = d.x;
@@ -704,7 +787,6 @@
       document.getElementById('edit-artist-name').value = node.name;
       document.getElementById('edit-artist-genre').value = node.genre;
 
-      // Collabs List
       const collabsList = document.getElementById('artist-collabs-list');
       collabsList.innerHTML = '';
 
