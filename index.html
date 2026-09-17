@@ -325,14 +325,13 @@
             <span id="admin-status" class="text-[11px] text-gray-500">Somente leitura</span>
           </div>
           <div id="admin-login-panel" class="space-y-2">
-            <p class="text-[11px] leading-relaxed text-gray-400">A edição é restrita ao administrador. Envie um código de 6 dígitos para o seu e-mail e digite-o abaixo.</p>
-            <button id="admin-login-btn" type="button" onclick="sendAdminOtp()" class="w-full bg-brand-accent hover:bg-purple-600 text-white text-xs py-2 rounded transition font-semibold">Enviar código de acesso</button>
-            <div id="admin-otp-panel" class="hidden space-y-2 pt-1">
-              <label for="admin-otp-input" class="text-[11px] text-gray-400">Código recebido por e-mail</label>
-              <input id="admin-otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" onkeydown="if(event.key==='Enter'){event.preventDefault();verifyAdminOtp();}" class="w-full tracking-[0.35em] text-center bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-accent">
-              <button id="admin-otp-verify-btn" type="button" onclick="verifyAdminOtp()" class="w-full bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded transition font-semibold">Entrar com código</button>
-              <p id="admin-otp-help" class="text-[10px] leading-relaxed text-gray-500">Use apenas o código mais recente. Ele expira e só pode ser usado uma vez.</p>
-            </div>
+            <p class="text-[11px] leading-relaxed text-gray-400">A edição é restrita ao administrador. Entre com sua senha do Supabase.</p>
+            <label for="admin-email-input" class="text-[11px] text-gray-400">E-mail</label>
+            <input id="admin-email-input" type="email" value="falmeida328@gmail.com" readonly class="w-full bg-gray-800/70 border border-gray-700 rounded px-3 py-2 text-xs text-gray-400 cursor-not-allowed">
+            <label for="admin-password-input" class="text-[11px] text-gray-400">Senha</label>
+            <input id="admin-password-input" type="password" autocomplete="current-password" placeholder="Sua senha" onkeydown="if(event.key==='Enter'){event.preventDefault();adminLoginWithPassword();}" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-accent">
+            <button id="admin-login-btn" type="button" onclick="adminLoginWithPassword()" class="w-full bg-brand-accent hover:bg-purple-600 text-white text-xs py-2 rounded transition font-semibold">Entrar</button>
+            <p class="text-[10px] leading-relaxed text-gray-500">A senha é enviada diretamente ao Supabase Auth e não é salva no código do site.</p>
           </div>
           <div id="admin-session-panel" class="hidden space-y-2">
             <p class="text-[11px] text-green-400">Sessão administrativa ativa.</p>
@@ -425,53 +424,27 @@
       return isAdmin;
     }
 
-    async function sendAdminOtp() {
+    async function adminLoginWithPassword() {
+      const input = document.getElementById('admin-password-input');
       const btn = document.getElementById('admin-login-btn');
-      const otpPanel = document.getElementById('admin-otp-panel');
-      const otpInput = document.getElementById('admin-otp-input');
-      if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+      const password = input?.value || '';
 
-      const { error } = await db.auth.signInWithOtp({
-        email: ADMIN_EMAIL,
-        options: { shouldCreateUser: true }
-      });
-
-      if (btn) { btn.disabled = false; btn.textContent = 'Reenviar código'; }
-      if (error) {
-        console.error(error);
-        alert('Não foi possível enviar o código de acesso: ' + error.message);
+      if (!password) {
+        alert('Digite sua senha para entrar.');
+        input?.focus();
         return;
       }
 
-      if (otpPanel) otpPanel.classList.remove('hidden');
-      if (otpInput) {
-        otpInput.value = '';
-        otpInput.focus();
-      }
-      showToast('Código de acesso enviado para o seu e-mail.');
-    }
-
-    async function verifyAdminOtp() {
-      const input = document.getElementById('admin-otp-input');
-      const btn = document.getElementById('admin-otp-verify-btn');
-      const token = (input?.value || '').replace(/\D/g, '').slice(0, 6);
-
-      if (token.length !== 6) {
-        alert('Digite o código de 6 dígitos recebido por e-mail.');
-        return;
-      }
-
-      if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
-      const { data, error } = await db.auth.verifyOtp({
+      if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+      const { data, error } = await db.auth.signInWithPassword({
         email: ADMIN_EMAIL,
-        token,
-        type: 'email'
+        password
       });
-      if (btn) { btn.disabled = false; btn.textContent = 'Entrar com código'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
 
       if (error) {
         console.error(error);
-        alert('Código inválido ou expirado. Solicite um novo código e tente novamente.');
+        alert('Não foi possível entrar. Confira a senha e tente novamente.');
         return;
       }
 
