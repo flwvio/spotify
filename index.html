@@ -162,6 +162,10 @@
             <div>
               <label class="text-xs text-gray-400 block mb-1">URL da Foto</label>
               <input type="url" id="edit-artist-image" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-accent">
+              <div class="flex gap-2 mt-2">
+                <button type="button" onclick="fillSelectedArtistImageFromSpotify()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-[11px] py-1.5 rounded transition">Buscar foto no Spotify</button>
+                <button type="button" onclick="document.getElementById('edit-artist-image').value='';" class="bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-700 text-[11px] px-3 py-1.5 rounded transition">Limpar</button>
+              </div>
             </div>
             <div class="flex space-x-2 pt-1">
               <button type="submit" class="flex-1 bg-brand-accent hover:bg-purple-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar Alterações</button>
@@ -169,10 +173,24 @@
             </div>
           </form>
 
-          <div>
-            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Colaborações (<span id="collab-count">0</span>)</h3>
-            <ul id="artist-collabs-list" class="space-y-2 text-sm">
-            </ul>
+          <div class="space-y-4">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="performance-count" class="text-lg font-bold text-brand-pink">0</div><div class="text-[10px] text-gray-500 uppercase">Interpretação</div></div>
+              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="production-count" class="text-lg font-bold text-brand-cyan">0</div><div class="text-[10px] text-gray-500 uppercase">Produção</div></div>
+              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="writing-count" class="text-lg font-bold text-brand-accent">0</div><div class="text-[10px] text-gray-500 uppercase">Letra</div></div>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Participações / Interpretação</h3>
+              <ul id="artist-performance-list" class="space-y-2 text-sm"></ul>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Músicas produzidas</h3>
+              <ul id="artist-production-list" class="space-y-2 text-sm"></ul>
+            </div>
+            <div>
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Letra / Composição</h3>
+              <ul id="artist-writing-list" class="space-y-2 text-sm"></ul>
+            </div>
           </div>
         </div>
 
@@ -190,6 +208,17 @@
             <div id="link-artists-container" class="flex flex-wrap items-center justify-around gap-2 pt-2 border-t border-gray-800 text-sm">
             </div>
 
+            <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-800">
+              <div class="bg-gray-950/60 border border-gray-800 rounded p-2">
+                <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Álbum / Projeto</div>
+                <div id="link-album" class="text-gray-200">—</div>
+              </div>
+              <div class="bg-gray-950/60 border border-gray-800 rounded p-2">
+                <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Tipo</div>
+                <div class="text-gray-200">Colaboração / Crédito</div>
+              </div>
+            </div>
+
             <div id="spotify-player-container" class="pt-2">
               <a id="spotify-search-btn" target="_blank" class="w-full bg-green-600 hover:bg-green-500 text-white text-xs py-2 px-3 rounded flex items-center justify-center space-x-2 font-semibold transition">
                 <i data-lucide="music-2" class="w-4 h-4"></i>
@@ -197,9 +226,29 @@
               </a>
             </div>
 
-            <button onclick="deleteCurrentLink()" class="admin-only w-full mt-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 rounded transition border border-red-500/30">
-              Remover Colaboração
-            </button>
+            <form id="edit-link-form" onsubmit="handleEditLink(event)" class="admin-only space-y-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+              <h3 class="text-xs font-semibold uppercase text-gray-400">Editar colaboração selecionada</h3>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Faixa</label>
+                <input type="text" id="edit-link-track" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Álbum / Projeto</label>
+                <input type="text" id="edit-link-album" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan" placeholder="Ex: Album, OST, EP...">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Ano</label>
+                <input type="number" id="edit-link-year" min="1950" max="2035" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-2">Créditos por artista</label>
+                <div id="edit-link-credits-list" class="space-y-2"></div>
+              </div>
+              <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar colaboração</button>
+                <button type="button" onclick="deleteCurrentLink()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 px-3 rounded transition border border-red-500/30">Remover</button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -234,31 +283,50 @@
             <i data-lucide="link-2" class="w-4 h-4"></i>
             <span>Nova Colaboração (Feat)</span>
           </h3>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Artista Principal *</label>
+          <div class="space-y-2">
+            <label class="text-xs text-gray-400 block">Artista Principal *</label>
             <select id="link-artist1-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan" required>
               <option value="">Selecione...</option>
             </select>
+            <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+              <label class="flex items-center gap-1"><input id="link-artist1-performance" type="checkbox" checked> Interpretação</label>
+              <label class="flex items-center gap-1"><input id="link-artist1-production" type="checkbox"> Produção</label>
+              <label class="flex items-center gap-1"><input id="link-artist1-writing" type="checkbox"> Letra/Composição</label>
+            </div>
           </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Artista 2 *</label>
+          <div class="space-y-2">
+            <label class="text-xs text-gray-400 block">Artista 2 *</label>
             <select id="link-artist2-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan" required>
               <option value="">Selecione...</option>
             </select>
+            <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+              <label class="flex items-center gap-1"><input id="link-artist2-performance" type="checkbox" checked> Interpretação</label>
+              <label class="flex items-center gap-1"><input id="link-artist2-production" type="checkbox"> Produção</label>
+              <label class="flex items-center gap-1"><input id="link-artist2-writing" type="checkbox"> Letra/Composição</label>
+            </div>
           </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Artista 3 (Opcional)</label>
+          <div class="space-y-2">
+            <label class="text-xs text-gray-400 block">Artista 3 (Opcional)</label>
             <select id="link-artist3-select" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
-              <option value="">Nenhum (Apenas duo)</option>
+              <option value="">Nenhum</option>
             </select>
+            <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+              <label class="flex items-center gap-1"><input id="link-artist3-performance" type="checkbox" checked> Interpretação</label>
+              <label class="flex items-center gap-1"><input id="link-artist3-production" type="checkbox"> Produção</label>
+              <label class="flex items-center gap-1"><input id="link-artist3-writing" type="checkbox"> Letra/Composição</label>
+            </div>
           </div>
           <div>
             <label class="text-xs text-gray-400 block mb-1">Nome da Faixa / Projeto</label>
             <input type="text" id="link-track-input" placeholder="Ex: Deixa Fluir" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
           </div>
           <div>
+            <label class="text-xs text-gray-400 block mb-1">Álbum / Projeto (Opcional)</label>
+            <input type="text" id="link-album-input" placeholder="Ex: 130 mood : TRBL, OST, single..." class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+          </div>
+          <div>
             <label class="text-xs text-gray-400 block mb-1">Ano de Lançamento</label>
-            <input type="number" id="link-year-input" value="2024" min="1950" max="2030" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+            <input type="number" id="link-year-input" value="2024" min="1950" max="2035" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
           </div>
           <button type="submit" class="w-full bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-2 rounded font-semibold transition">
             Conectar Artistas
@@ -881,7 +949,7 @@
         if (l.artists && Array.isArray(l.artists)) return l;
         const s = typeof l.source === 'object' ? l.source.id : l.source;
         const t = typeof l.target === 'object' ? l.target.id : l.target;
-        return { artists: [s, t], track: l.track, year: l.year };
+        return { artists: [s, t], track: l.track, album: l.album || '', credits: l.credits || {}, year: l.year };
       });
     }
 
@@ -891,7 +959,7 @@
     async function loadDataFromSupabase() {
       const [artistsResult, collaborationsResult, colorsResult] = await Promise.all([
         db.from('artists').select('id,name,genre,image_url,spotify_id,spotify_url'),
-        db.from('collaborations').select('id,track,year,collaboration_artists(artist_id)').order('id'),
+        db.from('collaborations').select('id,track,album,year,collaboration_artists(artist_id,roles)').order('id'),
         db.from('genre_colors').select('genre,color')
       ]);
 
@@ -918,7 +986,9 @@
         links: (collaborationsResult.data || []).map(collab => ({
           dbId: collab.id,
           artists: (collab.collaboration_artists || []).map(item => item.artist_id),
+          credits: Object.fromEntries((collab.collaboration_artists || []).map(item => [item.artist_id, item.roles || ['performance']])),
           track: collab.track || '',
+          album: collab.album || '',
           year: collab.year || null
         }))
       };
@@ -1204,38 +1274,49 @@
       document.getElementById('edit-artist-genre').value = node.genre;
       document.getElementById('edit-artist-image').value = node.image || '';
 
-      const collabsList = document.getElementById('artist-collabs-list');
-      collabsList.innerHTML = '';
+      const creditsFor = (collab, artistId) => (collab.credits && collab.credits[artistId]) || ['performance'];
+      const collabs = graphData.links.filter(l => l.artists.map(a => typeof a === 'object' ? a.id : a).includes(node.id));
 
-      const collabs = graphData.links.filter(l => {
-        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
-        return ids.includes(node.id);
-      });
+      const byRole = {
+        performance: collabs.filter(c => creditsFor(c, node.id).includes('performance')),
+        production: collabs.filter(c => creditsFor(c, node.id).includes('production')),
+        writing: collabs.filter(c => creditsFor(c, node.id).includes('writing'))
+      };
 
-      document.getElementById('collab-count').innerText = collabs.length;
+      document.getElementById('performance-count').innerText = byRole.performance.length;
+      document.getElementById('production-count').innerText = byRole.production.length;
+      document.getElementById('writing-count').innerText = byRole.writing.length;
 
-      collabs.forEach(c => {
-        const partnerNames = c.artists
-          .map(a => typeof a === 'object' ? a.id : a)
-          .filter(id => id !== node.id)
-          .map(id => {
-            const p = graphData.nodes.find(n => n.id === id);
-            return p ? p.name : id;
-          })
-          .join(" & ");
+      function renderArtistCreditList(listId, items, accentClass) {
+        const list = document.getElementById(listId);
+        list.innerHTML = '';
+        if (!items.length) {
+          list.innerHTML = '<li class="text-xs text-gray-600 italic">Nenhum crédito cadastrado ainda.</li>';
+          return;
+        }
+        items.forEach(c => {
+          const partnerNames = c.artists
+            .map(a => typeof a === 'object' ? a.id : a)
+            .filter(id => id !== node.id)
+            .map(id => graphData.nodes.find(n => n.id === id)?.name || id)
+            .join(' & ');
+          const li = document.createElement('li');
+          li.className = 'bg-gray-900/80 p-2 rounded flex justify-between items-center border border-gray-800 cursor-pointer hover:border-gray-600 transition';
+          li.onclick = () => selectLink(c);
+          li.innerHTML = `
+            <div class="min-w-0">
+              <div class="font-semibold text-gray-200 truncate">${c.track || 'Colaboração'}</div>
+              <div class="text-xs text-gray-500">${partnerNames ? 'com ' + partnerNames + ' • ' : ''}${c.album ? c.album + ' • ' : ''}${c.year || 'N/A'}</div>
+            </div>
+            <i data-lucide="music-2" class="w-4 h-4 ${accentClass}"></i>
+          `;
+          list.appendChild(li);
+        });
+      }
 
-        const li = document.createElement('li');
-        li.className = "bg-gray-900/80 p-2 rounded flex justify-between items-center border border-gray-800 cursor-pointer hover:border-brand-pink transition";
-        li.onclick = () => selectLink(c);
-        li.innerHTML = `
-          <div>
-            <span class="font-semibold text-gray-200">com ${partnerNames}</span>
-            <div class="text-xs text-gray-400">${c.track || 'Feat'} (${c.year || 'N/A'})</div>
-          </div>
-          <i data-lucide="music" class="w-4 h-4 text-brand-pink"></i>
-        `;
-        collabsList.appendChild(li);
-      });
+      renderArtistCreditList('artist-performance-list', byRole.performance, 'text-brand-pink');
+      renderArtistCreditList('artist-production-list', byRole.production, 'text-brand-cyan');
+      renderArtistCreditList('artist-writing-list', byRole.writing, 'text-brand-accent');
       lucide.createIcons();
 
       switchTab('info');
@@ -1255,6 +1336,10 @@
       const trackTitle = link.track || "Colaboração";
       document.getElementById('link-track-title').innerText = trackTitle;
       document.getElementById('link-year').innerText = link.year || "N/A";
+      document.getElementById('link-album').innerText = link.album || 'Single / sem álbum informado';
+      document.getElementById('edit-link-track').value = link.track || '';
+      document.getElementById('edit-link-album').value = link.album || '';
+      document.getElementById('edit-link-year').value = link.year || '';
 
       const artistContainer = document.getElementById('link-artists-container');
       artistContainer.innerHTML = '';
@@ -1267,8 +1352,10 @@
         artistNames.push(name);
 
         const span = document.createElement('span');
-        span.className = "font-semibold text-brand-accent";
-        span.innerText = name;
+        span.className = "font-semibold text-brand-accent text-center";
+        const roleLabels = { performance: 'Interpretação', production: 'Produção', writing: 'Letra' };
+        const roles = (link.credits && link.credits[id]) || ['performance'];
+        span.innerHTML = `${name}<span class="block text-[9px] font-normal text-gray-500">${roles.map(r => roleLabels[r] || r).join(' · ')}</span>`;
         artistContainer.appendChild(span);
 
         if (index < link.artists.length - 1) {
@@ -1279,12 +1366,106 @@
         }
       });
       lucide.createIcons();
+      renderEditLinkCredits(link);
 
       const spotifyBtn = document.getElementById('spotify-search-btn');
       const searchQuery = encodeURIComponent(`${artistNames.join(" ")} ${trackTitle}`);
       spotifyBtn.href = `https://open.spotify.com/search/${searchQuery}`;
 
       switchTab('info');
+    }
+
+    function renderEditLinkCredits(link) {
+      const container = document.getElementById('edit-link-credits-list');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!link || !Array.isArray(link.artists)) return;
+      const roleLabels = [
+        ['performance', 'Interpretação'],
+        ['production', 'Produção'],
+        ['writing', 'Letra/Composição']
+      ];
+      link.artists.forEach((artRef, index) => {
+        const id = typeof artRef === 'object' ? artRef.id : artRef;
+        const artist = graphData.nodes.find(n => n.id === id);
+        const name = artist ? artist.name : id;
+        const roles = (link.credits && link.credits[id]) || ['performance'];
+        const row = document.createElement('div');
+        row.className = 'bg-gray-900/80 border border-gray-800 rounded p-2';
+        row.innerHTML = `
+          <div class="text-xs font-semibold text-gray-200 mb-2">${name}</div>
+          <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+            ${roleLabels.map(([key, label]) => `<label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="${key}" class="edit-link-role" type="checkbox" ${roles.includes(key) ? 'checked' : ''}> ${label}</label>`).join('')}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function getEditedCreditsFromForm(link) {
+      const credits = {};
+      if (!link || !Array.isArray(link.artists)) return credits;
+      link.artists.forEach(artRef => {
+        const id = typeof artRef === 'object' ? artRef.id : artRef;
+        const boxes = Array.from(document.querySelectorAll(`#edit-link-credits-list input[data-artist-id="${id}"]`));
+        const roles = boxes.filter(b => b.checked).map(b => b.dataset.role);
+        credits[id] = roles;
+      });
+      return credits;
+    }
+
+    async function handleEditLink(e) {
+      e.preventDefault();
+      if (!selectedLink || !selectedLink.dbId || !await requireAdmin()) return;
+      const track = document.getElementById('edit-link-track').value.trim();
+      const album = document.getElementById('edit-link-album').value.trim();
+      const yearValue = document.getElementById('edit-link-year').value;
+      const year = yearValue ? parseInt(yearValue, 10) : null;
+      const credits = getEditedCreditsFromForm(selectedLink);
+      const emptyCreditArtist = Object.keys(credits).find(id => !credits[id].length);
+      if (emptyCreditArtist) return alert('Cada artista precisa ter pelo menos um crédito marcado.');
+
+      try {
+        const { error: collabError } = await db.from('collaborations').update({
+          track,
+          album: album || null,
+          year,
+          updated_at: new Date().toISOString()
+        }).eq('id', selectedLink.dbId);
+        if (collabError) throw collabError;
+
+        for (const [artist_id, roles] of Object.entries(credits)) {
+          const { error: creditError } = await db.from('collaboration_artists').update({ roles }).eq('collaboration_id', selectedLink.dbId).eq('artist_id', artist_id);
+          if (creditError) throw creditError;
+        }
+
+        await loadDataFromSupabase();
+        updateGraph();
+        const refreshed = graphData.links.find(l => l.dbId === selectedLink.dbId);
+        if (refreshed) selectLink(refreshed);
+        showToast('Colaboração atualizada!');
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao atualizar colaboração: ' + (error.message || error));
+      }
+    }
+
+    async function fillSelectedArtistImageFromSpotify() {
+      if (!selectedNode || !await requireAdmin()) return;
+      const token = await getSpotifyToken();
+      if (!token) {
+        await startSpotifyLogin('fill-artist-image', { artistId: selectedNode.id });
+        return;
+      }
+      try {
+        const spotifyData = await fetchArtistFromSpotify(selectedNode.name);
+        if (!spotifyData || !spotifyData.image) return alert('Não encontrei uma foto desse artista no Spotify.');
+        document.getElementById('edit-artist-image').value = spotifyData.image;
+        showToast('Foto encontrada no Spotify. Clique em salvar para gravar.');
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao buscar foto no Spotify.');
+      }
     }
 
     // --- FORM ACTIONS ---
@@ -1367,16 +1548,28 @@
       const a2 = document.getElementById('link-artist2-select').value;
       const a3 = document.getElementById('link-artist3-select').value;
       const track = document.getElementById('link-track-input').value.trim();
+      const album = document.getElementById('link-album-input').value.trim();
       const year = parseInt(document.getElementById('link-year-input').value) || new Date().getFullYear();
       if (!a1 || !a2) return alert("Selecione pelo menos os dois primeiros artistas.");
       const artists = [a1, a2, ...(a3 ? [a3] : [])];
       const uniqueArtists = [...new Set(artists)];
       if (uniqueArtists.length < artists.length) return alert("Por favor, selecione artistas diferentes para a colaboração.");
 
+      const rolesForSlot = slot => {
+        const roles = [];
+        if (document.getElementById(`link-artist${slot}-performance`).checked) roles.push('performance');
+        if (document.getElementById(`link-artist${slot}-production`).checked) roles.push('production');
+        if (document.getElementById(`link-artist${slot}-writing`).checked) roles.push('writing');
+        return roles;
+      };
+      const slotEntries = [[a1, rolesForSlot(1)], [a2, rolesForSlot(2)], ...(a3 ? [[a3, rolesForSlot(3)]] : [])];
+      if (slotEntries.some(([, roles]) => roles.length === 0)) return alert('Marque pelo menos um crédito para cada artista selecionado.');
+
       try {
-        const { data: collab, error } = await db.from('collaborations').insert({ track, year }).select('id').single();
+        const { data: collab, error } = await db.from('collaborations').insert({ track, album: album || null, year }).select('id').single();
         if (error) throw error;
-        const { error: bridgeError } = await db.from('collaboration_artists').insert(uniqueArtists.map(artist_id => ({ collaboration_id: collab.id, artist_id })));
+        const creditRows = slotEntries.map(([artist_id, roles]) => ({ collaboration_id: collab.id, artist_id, roles }));
+        const { error: bridgeError } = await db.from('collaboration_artists').insert(creditRows);
         if (bridgeError) {
           await db.from('collaborations').delete().eq('id', collab.id);
           throw bridgeError;
@@ -1384,7 +1577,13 @@
         await loadDataFromSupabase();
         updateGraph();
         document.getElementById('link-track-input').value = '';
-        showToast("Colaboração salva permanentemente!");
+        document.getElementById('link-album-input').value = '';
+        [1,2,3].forEach(slot => {
+          document.getElementById(`link-artist${slot}-performance`).checked = true;
+          document.getElementById(`link-artist${slot}-production`).checked = false;
+          document.getElementById(`link-artist${slot}-writing`).checked = false;
+        });
+        showToast("Colaboração e créditos salvos permanentemente!");
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar colaboração: ' + (error.message || error));
@@ -1529,6 +1728,8 @@
       const cleanLinks = graphData.links.map(l => ({
         artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
         track: l.track,
+        album: l.album || '',
+        credits: l.credits || {},
         year: l.year
       }));
 
