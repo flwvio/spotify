@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- D3.js v7 CDN -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -317,6 +319,22 @@
         <hr class="border-gray-800">
 
         <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Spotify</h3>
+            <span id="spotify-status" class="text-[11px] text-gray-500">Não conectado</span>
+          </div>
+          <button id="spotify-connect-btn" type="button" class="w-full bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded transition">
+            Conectar Spotify
+          </button>
+          <button id="spotify-refresh-btn" type="button" onclick="enrichExistingArtists()" class="w-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-wait text-gray-200 border border-gray-700 text-xs py-2 rounded transition">
+            Atualizar fotos dos artistas existentes
+          </button>
+          <p class="text-[10px] leading-relaxed text-gray-500">A conexão usa OAuth PKCE; nenhuma chave secreta fica exposta no navegador.</p>
+        </div>
+
+        <hr class="border-gray-800">
+
+        <div class="space-y-3">
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Gerenciar Dados</h3>
           <button onclick="exportJSON()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded flex items-center justify-center space-x-2 transition">
             <i data-lucide="download" class="w-4 h-4"></i>
@@ -355,29 +373,186 @@
   </main>
 
   <script>
-    // --- SPOTIFY API CREDENTIALS ---
+    // --- SUPABASE (fonte online da teia) ---
+    const SUPABASE_URL = 'https://rntxymqxbgaphlfinpav.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_lV4PJKZaNiB2eJuh_sJIyQ_-ExFwf1a';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    // --- SPOTIFY WEB API (OAuth Authorization Code + PKCE) ---
+    // O Client ID pode ficar público. NUNCA coloque Client Secret em um HTML hospedado no GitHub Pages.
     const spotifyClientId = 'e08e19e73af34e8c9a53095340701197';
-    const spotifyClientSecret = 'b642cfae5e214d5ba10c5ae23ce342f1';
+    const SPOTIFY_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
+    const SPOTIFY_TOKEN_KEY = 'spotify_pkce_token';
+    const SPOTIFY_VERIFIER_KEY = 'spotify_pkce_verifier';
+    const SPOTIFY_STATE_KEY = 'spotify_pkce_state';
+    const SPOTIFY_PENDING_ACTION_KEY = 'spotify_pending_action';
+
+    function base64UrlEncode(bytes) {
+      let binary = '';
+      bytes.forEach(byte => binary += String.fromCharCode(byte));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function randomString(length = 64) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      const values = crypto.getRandomValues(new Uint8Array(length));
+      return Array.from(values, v => chars[v % chars.length]).join('');
+    }
+
+    async function sha256(value) {
+      return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
+    }
+
+    function getStoredSpotifyToken() {
+      try {
+        return JSON.parse(sessionStorage.getItem(SPOTIFY_TOKEN_KEY) || 'null');
+      } catch {
+        return null;
+      }
+    }
+
+    function storeSpotifyToken(data) {
+      const previous = getStoredSpotifyToken() || {};
+      const token = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || previous.refresh_token || '',
+        expires_at: Date.now() + ((data.expires_in || 3600) * 1000) - 30000
+      };
+      sessionStorage.setItem(SPOTIFY_TOKEN_KEY, JSON.stringify(token));
+      updateSpotifyUi();
+      return token;
+    }
+
+    async function refreshSpotifyToken(refreshToken) {
+      if (!refreshToken) return null;
+      try {
+        const body = new URLSearchParams({
+          client_id: spotifyClientId,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        });
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
+        if (!response.ok) throw new Error(`Spotify refresh HTTP ${response.status}`);
+        return storeSpotifyToken(await response.json()).access_token;
+      } catch (error) {
+        console.error('Erro ao renovar token Spotify:', error);
+        sessionStorage.removeItem(SPOTIFY_TOKEN_KEY);
+        updateSpotifyUi();
+        return null;
+      }
+    }
 
     async function getSpotifyToken() {
-      const credentials = btoa(`${spotifyClientId}:${spotifyClientSecret}`);
+      const token = getStoredSpotifyToken();
+      if (!token) return null;
+      if (token.expires_at > Date.now()) return token.access_token;
+      return refreshSpotifyToken(token.refresh_token);
+    }
+
+    async function startSpotifyLogin(pendingAction = '', payload = null) {
+      if (window.location.protocol === 'file:') {
+        alert('Para conectar ao Spotify, abra este projeto por uma URL HTTPS (por exemplo GitHub Pages), não diretamente como arquivo local.');
+        return;
+      }
+
+      const verifier = randomString(96);
+      const challenge = base64UrlEncode(await sha256(verifier));
+      const state = randomString(32);
+
+      sessionStorage.setItem(SPOTIFY_VERIFIER_KEY, verifier);
+      sessionStorage.setItem(SPOTIFY_STATE_KEY, state);
+      if (pendingAction) {
+        sessionStorage.setItem(SPOTIFY_PENDING_ACTION_KEY, JSON.stringify({ action: pendingAction, payload }));
+      }
+
+      const params = new URLSearchParams({
+        client_id: spotifyClientId,
+        response_type: 'code',
+        redirect_uri: SPOTIFY_REDIRECT_URI,
+        code_challenge_method: 'S256',
+        code_challenge: challenge,
+        state
+      });
+
+      window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    }
+
+    async function handleSpotifyCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+      if (!code && !error) return;
+
+      const cleanUrl = `${window.location.origin}${window.location.pathname}${window.location.hash || ''}`;
+      history.replaceState({}, document.title, cleanUrl);
+
+      if (error) {
+        console.error('Spotify OAuth:', error);
+        showToast('Conexão com Spotify cancelada.');
+        return;
+      }
+
+      const expectedState = sessionStorage.getItem(SPOTIFY_STATE_KEY);
+      const returnedState = params.get('state');
+      const verifier = sessionStorage.getItem(SPOTIFY_VERIFIER_KEY);
+      if (!verifier || !expectedState || returnedState !== expectedState) {
+        alert('Não foi possível validar o retorno do Spotify. Tente conectar novamente.');
+        return;
+      }
+
+      const body = new URLSearchParams({
+        client_id: spotifyClientId,
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: SPOTIFY_REDIRECT_URI,
+        code_verifier: verifier
+      });
+
       try {
         const response = await fetch('https://accounts.spotify.com/api/token', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${credentials}`
-          },
-          body: 'grant_type=client_credentials'
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
         });
-
-        if (!response.ok) throw new Error('Falha ao autenticar no Spotify');
-        const data = await response.json();
-        return data.access_token;
+        if (!response.ok) throw new Error(`Spotify token HTTP ${response.status}`);
+        storeSpotifyToken(await response.json());
+        showToast('Spotify conectado!');
       } catch (error) {
-        console.error('Erro no Token Spotify:', error);
-        return null;
+        console.error('Erro no login Spotify:', error);
+        alert('Falha ao conectar ao Spotify. Confira a Redirect URI cadastrada no Spotify Developer Dashboard.');
+        return;
+      } finally {
+        sessionStorage.removeItem(SPOTIFY_VERIFIER_KEY);
+        sessionStorage.removeItem(SPOTIFY_STATE_KEY);
       }
+
+      await completePendingSpotifyAction();
+    }
+
+    function disconnectSpotify() {
+      sessionStorage.removeItem(SPOTIFY_TOKEN_KEY);
+      sessionStorage.removeItem(SPOTIFY_PENDING_ACTION_KEY);
+      updateSpotifyUi();
+      showToast('Spotify desconectado.');
+    }
+
+    function updateSpotifyUi() {
+      const status = document.getElementById('spotify-status');
+      const connectBtn = document.getElementById('spotify-connect-btn');
+      if (!status || !connectBtn) return;
+      const connected = !!getStoredSpotifyToken();
+      status.textContent = connected ? 'Conectado nesta sessão' : 'Não conectado';
+      status.className = connected ? 'text-[11px] text-green-400' : 'text-[11px] text-gray-500';
+      connectBtn.textContent = connected ? 'Desconectar Spotify' : 'Conectar Spotify';
+      connectBtn.onclick = connected ? disconnectSpotify : () => startSpotifyLogin();
+    }
+
+    function normalizeArtistName(value) {
+      return (value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
     async function fetchArtistFromSpotify(artistName) {
@@ -385,20 +560,28 @@
       if (!token) return null;
 
       try {
-        const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist&limit=1`, {
+        const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist&limit=5`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
+        if (response.status === 401) {
+          sessionStorage.removeItem(SPOTIFY_TOKEN_KEY);
+          updateSpotifyUi();
+          return null;
+        }
+        if (!response.ok) throw new Error(`Spotify search HTTP ${response.status}`);
+
         const data = await response.json();
-        
-        if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
-          console.warn('Nenhum artista retornado pelo Spotify.');
+        const items = data.artists?.items || [];
+        if (!items.length) {
+          console.warn(`Nenhum artista retornado pelo Spotify para: ${artistName}`);
           return null;
         }
 
-        const artist = data.artists.items[0];
-        let rawGenre = (artist.genres && artist.genres.length > 0) ? artist.genres[0] : 'Outro';
-        let formattedGenre = rawGenre.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const wanted = normalizeArtistName(artistName);
+        const artist = items.find(a => normalizeArtistName(a.name) === wanted) || items[0];
+        const rawGenre = (artist.genres && artist.genres.length > 0) ? artist.genres[0] : 'Outro';
+        const formattedGenre = rawGenre.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
         return {
           id: artist.id,
@@ -410,6 +593,60 @@
       } catch (error) {
         console.error('Erro ao buscar artista:', error);
         return null;
+      }
+    }
+
+    async function enrichExistingArtists() {
+      const token = await getSpotifyToken();
+      if (!token) {
+        await startSpotifyLogin('refresh-existing');
+        return;
+      }
+
+      const targets = graphData.nodes.filter(n => !n.image);
+      if (!targets.length) {
+        showToast('Todos os artistas já possuem imagem.');
+        return;
+      }
+
+      const btn = document.getElementById('spotify-refresh-btn');
+      if (btn) btn.disabled = true;
+      let updated = 0;
+
+      try {
+        for (let i = 0; i < targets.length; i++) {
+          const node = targets[i];
+          showToast(`Spotify: ${i + 1}/${targets.length} — ${node.name}`);
+          const spotifyData = await fetchArtistFromSpotify(node.name);
+          if (spotifyData?.image) {
+            node.image = spotifyData.image;
+            node.spotifyId = spotifyData.id;
+            node.spotifyUrl = spotifyData.spotifyUrl;
+            updated++;
+            updateGraph();
+          }
+          await new Promise(resolve => setTimeout(resolve, 120));
+        }
+        saveData();
+        updateGraph();
+        showToast(`${updated} foto(s) atualizada(s) pelo Spotify.`);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function completePendingSpotifyAction() {
+      let pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem(SPOTIFY_PENDING_ACTION_KEY) || 'null');
+      } catch {}
+      sessionStorage.removeItem(SPOTIFY_PENDING_ACTION_KEY);
+      if (!pending) return;
+
+      if (pending.action === 'refresh-existing') {
+        await enrichExistingArtists();
+      } else if (pending.action === 'add-artist' && pending.payload) {
+        await addArtistFromValues(pending.payload.inputName, pending.payload.fallbackGenre);
       }
     }
 
@@ -549,39 +786,51 @@
       });
     }
 
-    let graphData = loadData();
+    // A teia agora é carregada do Supabase. O defaultData continua no arquivo apenas como fallback/exportação histórica.
+    let graphData = { nodes: [], links: [] };
 
-    function loadData() {
-      const saved = localStorage.getItem('music_graph_data');
-      if (saved) {
-        try { 
-          const parsed = JSON.parse(saved);
-          parsed.links = normalizeLinks(parsed.links);
-          if (parsed.genreColors) {
-            genreColors = parsed.genreColors;
-          } else {
-            parsed.genreColors = { ...defaultGenreColors };
-            genreColors = { ...defaultGenreColors };
-          }
-          return parsed;
-        } catch (e) { console.error(e); }
+    async function loadDataFromSupabase() {
+      const [artistsResult, collaborationsResult, colorsResult] = await Promise.all([
+        db.from('artists').select('id,name,genre,image_url,spotify_id,spotify_url'),
+        db.from('collaborations').select('id,track,year,collaboration_artists(artist_id)').order('id'),
+        db.from('genre_colors').select('genre,color')
+      ]);
+
+      const errors = [artistsResult.error, collaborationsResult.error, colorsResult.error].filter(Boolean);
+      if (errors.length) {
+        console.error('Erro ao carregar Supabase:', errors);
+        throw errors[0];
       }
-      genreColors = { ...defaultGenreColors };
-      return JSON.parse(JSON.stringify(defaultData));
+
+      genreColors = Object.fromEntries(
+        (colorsResult.data || []).map(item => [item.genre, item.color])
+      );
+      if (!Object.keys(genreColors).length) genreColors = { ...defaultGenreColors };
+
+      graphData = {
+        nodes: (artistsResult.data || []).map(artist => ({
+          id: artist.id,
+          name: artist.name,
+          genre: artist.genre || 'Outro',
+          image: artist.image_url || '',
+          spotifyId: artist.spotify_id || '',
+          spotifyUrl: artist.spotify_url || ''
+        })),
+        links: (collaborationsResult.data || []).map(collab => ({
+          dbId: collab.id,
+          artists: (collab.collaboration_artists || []).map(item => item.artist_id),
+          track: collab.track || '',
+          year: collab.year || null
+        }))
+      };
+
+      return graphData;
     }
 
+    // Durante esta primeira fase, alterações feitas pelos formulários ficam apenas na sessão visual.
+    // Na próxima fase substituiremos estas ações por INSERT/UPDATE/DELETE no Supabase.
     function saveData() {
-      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image || "" }));
-      const cleanLinks = graphData.links.map(l => ({
-        artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
-        track: l.track,
-        year: l.year
-      }));
-      localStorage.setItem('music_graph_data', JSON.stringify({ 
-        nodes: cleanNodes, 
-        links: cleanLinks,
-        genreColors: genreColors
-      }));
+      // intencionalmente vazio: evita voltar a gravar no localStorage.
     }
 
     // --- D3 GRAPH GLOBALS ---
@@ -590,20 +839,40 @@
     let selectedLink = null;
     let d3Edges = [];
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
-      initGraph();
-      populateDropdowns();
-      renderGenresManager();
+      updateSpotifyUi();
 
-      document.getElementById('reset-data-btn').addEventListener('click', () => {
-        if (confirm("Deseja restaurar os dados originais do JSON?")) {
-          localStorage.removeItem('music_graph_data');
-          genreColors = { ...defaultGenreColors };
-          graphData = JSON.parse(JSON.stringify(defaultData));
+      try {
+        await loadDataFromSupabase();
+        initGraph();
+        populateDropdowns();
+        renderGenresManager();
+        showToast(`Teia online carregada: ${graphData.nodes.length} artistas, ${graphData.links.length} colaborações.`);
+      } catch (error) {
+        console.error(error);
+        alert('Não foi possível carregar os dados do Supabase. Verifique a conexão e as políticas de leitura.');
+        genreColors = { ...defaultGenreColors };
+        graphData = JSON.parse(JSON.stringify(defaultData));
+        initGraph();
+        populateDropdowns();
+        renderGenresManager();
+      }
+
+      await handleSpotifyCallback();
+
+      document.getElementById('reset-data-btn').addEventListener('click', async () => {
+        if (!confirm('Recarregar a teia a partir do banco online? Alterações locais não salvas serão descartadas.')) return;
+        try {
+          await loadDataFromSupabase();
+          selectedNode = null;
+          selectedLink = null;
           updateGraph();
           renderGenresManager();
-          showToast("Dados restaurados para o JSON!");
+          showToast('Dados recarregados do Supabase!');
+        } catch (error) {
+          console.error(error);
+          alert('Não foi possível recarregar o Supabase.');
         }
       });
     });
@@ -923,57 +1192,62 @@
       e.preventDefault();
       const inputName = document.getElementById('new-artist-name').value.trim();
       const fallbackGenre = document.getElementById('new-artist-genre').value;
-
       if (!inputName) return;
 
-      const submitBtn = document.getElementById('add-artist-submit-btn');
-      submitBtn.disabled = true;
-      submitBtn.innerText = 'Buscando no Spotify...';
-
-      showToast("Consultando a API do Spotify...");
-
-      const spotifyData = await fetchArtistFromSpotify(inputName);
-
-      let artistId, artistName, artistGenre, artistImage;
-
-      if (spotifyData) {
-        artistId = spotifyData.id;
-        artistName = spotifyData.name;
-        artistGenre = spotifyData.genre;
-        artistImage = spotifyData.image;
-      } else {
-        artistId = inputName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        artistName = inputName;
-        artistGenre = fallbackGenre || 'Outro';
-        artistImage = '';
-      }
-
-      if (graphData.nodes.some(n => n.id === artistId)) {
-        alert("Este artista já está cadastrado no grafo!");
-        submitBtn.disabled = false;
-        submitBtn.innerText = 'Buscar e Cadastrar';
+      const token = await getSpotifyToken();
+      if (!token) {
+        await startSpotifyLogin('add-artist', { inputName, fallbackGenre });
         return;
       }
 
-      if (!genreColors[artistGenre]) {
-        const randomColors = ['#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
-        genreColors[artistGenre] = randomColors[Math.floor(Math.random() * randomColors.length)];
-      }
+      await addArtistFromValues(inputName, fallbackGenre);
+    }
 
-      const newNode = { id: artistId, name: artistName, genre: artistGenre, image: artistImage };
-      graphData.nodes.push(newNode);
-      
-      updateGraph();
-      renderGenresManager();
+    async function addArtistFromValues(inputName, fallbackGenre) {
+      const submitBtn = document.getElementById('add-artist-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Buscando no Spotify...';
+      showToast("Consultando a API do Spotify...");
 
-      document.getElementById('new-artist-name').value = '';
-      submitBtn.disabled = false;
-      submitBtn.innerText = 'Buscar e Cadastrar';
+      try {
+        const spotifyData = await fetchArtistFromSpotify(inputName);
+        let artistId, artistName, artistGenre, artistImage, spotifyId = '', spotifyUrl = '';
 
-      if (spotifyData) {
-        showToast(`"${artistName}" cadastrado via Spotify!`);
-      } else {
-        showToast(`"${artistName}" cadastrado manualmente.`);
+        if (spotifyData) {
+          // Mantemos o ID do Spotify para novos artistas; para artistas antigos a hidratação preserva o ID local.
+          artistId = spotifyData.id;
+          artistName = spotifyData.name;
+          artistGenre = spotifyData.genre;
+          artistImage = spotifyData.image;
+          spotifyId = spotifyData.id;
+          spotifyUrl = spotifyData.spotifyUrl;
+        } else {
+          artistId = inputName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          artistName = inputName;
+          artistGenre = fallbackGenre || 'Outro';
+          artistImage = '';
+        }
+
+        const normalizedNewName = normalizeArtistName(artistName);
+        if (graphData.nodes.some(n => n.id === artistId || normalizeArtistName(n.name) === normalizedNewName)) {
+          alert("Este artista já está cadastrado no grafo!");
+          return;
+        }
+
+        if (!genreColors[artistGenre]) {
+          const randomColors = ['#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
+          genreColors[artistGenre] = randomColors[Math.floor(Math.random() * randomColors.length)];
+        }
+
+        graphData.nodes.push({ id: artistId, name: artistName, genre: artistGenre, image: artistImage, spotifyId, spotifyUrl });
+        updateGraph();
+        renderGenresManager();
+        document.getElementById('new-artist-name').value = '';
+
+        showToast(spotifyData ? `"${artistName}" cadastrado via Spotify!` : `"${artistName}" cadastrado manualmente.`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Buscar e Cadastrar';
       }
     }
 
@@ -1136,7 +1410,7 @@
 
     // --- EXPORT & IMPORT DATA ---
     function exportJSON() {
-      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image || "" }));
+      const cleanNodes = graphData.nodes.map(n => ({ id: n.id, name: n.name, genre: n.genre, image: n.image || "", spotifyId: n.spotifyId || "", spotifyUrl: n.spotifyUrl || "" }));
       const cleanLinks = graphData.links.map(l => ({
         artists: l.artists.map(a => typeof a === 'object' ? a.id : a),
         track: l.track,
