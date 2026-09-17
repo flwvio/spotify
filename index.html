@@ -79,6 +79,7 @@
       background: #1F2937;
       border-radius: 3px;
     }
+    body:not(.is-admin) .admin-only { display: none !important; }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col md:flex-row relative">
@@ -110,11 +111,11 @@
         <i data-lucide="info" class="w-4 h-4"></i>
         <span>Detalhes</span>
       </button>
-      <button id="tab-add-btn" onclick="switchTab('add')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+      <button id="tab-add-btn" onclick="switchTab('add')" class="admin-only flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
         <i data-lucide="plus-circle" class="w-4 h-4"></i>
         <span>Adicionar</span>
       </button>
-      <button id="tab-genres-btn" onclick="switchTab('genres')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+      <button id="tab-genres-btn" onclick="switchTab('genres')" class="admin-only flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
         <i data-lucide="palette" class="w-4 h-4"></i>
         <span>Gêneros</span>
       </button>
@@ -147,7 +148,7 @@
           </div>
 
           <!-- Edit Artist Form -->
-          <form id="edit-artist-form" onsubmit="handleEditArtist(event)" class="space-y-3 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+          <form id="edit-artist-form" onsubmit="handleEditArtist(event)" class="admin-only space-y-3 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
             <h3 class="text-xs font-semibold uppercase text-gray-400">Editar Artista Selecionado</h3>
             <div>
               <label class="text-xs text-gray-400 block mb-1">Nome</label>
@@ -196,7 +197,7 @@
               </a>
             </div>
 
-            <button onclick="deleteCurrentLink()" class="w-full mt-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 rounded transition border border-red-500/30">
+            <button onclick="deleteCurrentLink()" class="admin-only w-full mt-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 rounded transition border border-red-500/30">
               Remover Colaboração
             </button>
           </div>
@@ -318,7 +319,24 @@
 
         <hr class="border-gray-800">
 
-        <div class="space-y-3">
+        <div class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Administração</h3>
+            <span id="admin-status" class="text-[11px] text-gray-500">Somente leitura</span>
+          </div>
+          <div id="admin-login-panel" class="space-y-2">
+            <p class="text-[11px] leading-relaxed text-gray-400">A edição é restrita ao administrador. O acesso é enviado por e-mail.</p>
+            <button id="admin-login-btn" type="button" onclick="sendAdminMagicLink()" class="w-full bg-brand-accent hover:bg-purple-600 text-white text-xs py-2 rounded transition font-semibold">Enviar link de acesso</button>
+          </div>
+          <div id="admin-session-panel" class="hidden space-y-2">
+            <p class="text-[11px] text-green-400">Sessão administrativa ativa.</p>
+            <button type="button" onclick="adminLogout()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded transition">Sair do modo de edição</button>
+          </div>
+        </div>
+
+        <hr class="border-gray-800">
+
+        <div class="admin-only space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Spotify</h3>
             <span id="spotify-status" class="text-[11px] text-gray-500">Não conectado</span>
@@ -341,7 +359,7 @@
             <span>Exportar Grafo (JSON)</span>
           </button>
           
-          <label class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded flex items-center justify-center space-x-2 transition cursor-pointer">
+          <label class="admin-only w-full bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs py-2 rounded flex items-center justify-center space-x-2 transition cursor-pointer">
             <i data-lucide="upload" class="w-4 h-4"></i>
             <span>Importar Grafo (JSON)</span>
             <input type="file" id="import-json-input" accept=".json" onchange="importJSON(event)" class="hidden">
@@ -377,6 +395,59 @@
     const SUPABASE_URL = 'https://rntxymqxbgaphlfinpav.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_lV4PJKZaNiB2eJuh_sJIyQ_-ExFwf1a';
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const ADMIN_EMAIL = 'falmeida328@gmail.com';
+    let isAdmin = false;
+
+    async function refreshAdminSession() {
+      const { data: { session } } = await db.auth.getSession();
+      isAdmin = !!session?.user?.email && session.user.email.toLowerCase() === ADMIN_EMAIL;
+      document.body.classList.toggle('is-admin', isAdmin);
+      const status = document.getElementById('admin-status');
+      const loginPanel = document.getElementById('admin-login-panel');
+      const sessionPanel = document.getElementById('admin-session-panel');
+      if (status) {
+        status.textContent = isAdmin ? 'Edição liberada' : 'Somente leitura';
+        status.className = isAdmin ? 'text-[11px] text-green-400' : 'text-[11px] text-gray-500';
+      }
+      if (loginPanel) loginPanel.classList.toggle('hidden', isAdmin);
+      if (sessionPanel) sessionPanel.classList.toggle('hidden', !isAdmin);
+      if (!isAdmin) {
+        const addTab = document.getElementById('tab-add');
+        const genresTab = document.getElementById('tab-genres');
+        if ((addTab && !addTab.classList.contains('hidden')) || (genresTab && !genresTab.classList.contains('hidden'))) switchTab('info');
+      }
+      return isAdmin;
+    }
+
+    async function sendAdminMagicLink() {
+      const btn = document.getElementById('admin-login-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { error } = await db.auth.signInWithOtp({
+        email: ADMIN_EMAIL,
+        options: { emailRedirectTo: redirectTo, shouldCreateUser: true }
+      });
+      if (btn) { btn.disabled = false; btn.textContent = 'Enviar link de acesso'; }
+      if (error) {
+        console.error(error);
+        alert('Não foi possível enviar o link de acesso: ' + error.message);
+        return;
+      }
+      showToast('Link de acesso enviado para o seu e-mail.');
+    }
+
+    async function adminLogout() {
+      await db.auth.signOut();
+      await refreshAdminSession();
+      showToast('Modo de edição encerrado.');
+    }
+
+    async function requireAdmin() {
+      if (isAdmin) return true;
+      await refreshAdminSession();
+      if (!isAdmin) alert('Entre como administrador para editar a teia.');
+      return isAdmin;
+    }
 
     // --- SPOTIFY WEB API (OAuth Authorization Code + PKCE) ---
     // O Client ID pode ficar público. NUNCA coloque Client Secret em um HTML hospedado no GitHub Pages.
@@ -622,6 +693,10 @@
             node.image = spotifyData.image;
             node.spotifyId = spotifyData.id;
             node.spotifyUrl = spotifyData.spotifyUrl;
+            const { error } = await db.from('artists').update({
+              image_url: node.image, spotify_id: node.spotifyId, spotify_url: node.spotifyUrl, updated_at: new Date().toISOString()
+            }).eq('id', node.id);
+            if (error) throw error;
             updated++;
             updateGraph();
           }
@@ -827,8 +902,7 @@
       return graphData;
     }
 
-    // Durante esta primeira fase, alterações feitas pelos formulários ficam apenas na sessão visual.
-    // Na próxima fase substituiremos estas ações por INSERT/UPDATE/DELETE no Supabase.
+    // A persistência principal agora é o Supabase. Esta função permanece apenas por compatibilidade com chamadas antigas.
     function saveData() {
       // intencionalmente vazio: evita voltar a gravar no localStorage.
     }
@@ -841,6 +915,8 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
+      await refreshAdminSession();
+      db.auth.onAuthStateChange(() => setTimeout(refreshAdminSession, 0));
       updateSpotifyUi();
 
       try {
@@ -1190,6 +1266,7 @@
     // --- FORM ACTIONS ---
     async function handleAddArtist(e) {
       e.preventDefault();
+      if (!await requireAdmin()) return;
       const inputName = document.getElementById('new-artist-name').value.trim();
       const fallbackGenre = document.getElementById('new-artist-genre').value;
       if (!inputName) return;
@@ -1199,11 +1276,11 @@
         await startSpotifyLogin('add-artist', { inputName, fallbackGenre });
         return;
       }
-
       await addArtistFromValues(inputName, fallbackGenre);
     }
 
     async function addArtistFromValues(inputName, fallbackGenre) {
+      if (!await requireAdmin()) return;
       const submitBtn = document.getElementById('add-artist-submit-btn');
       submitBtn.disabled = true;
       submitBtn.innerText = 'Buscando no Spotify...';
@@ -1212,17 +1289,15 @@
       try {
         const spotifyData = await fetchArtistFromSpotify(inputName);
         let artistId, artistName, artistGenre, artistImage, spotifyId = '', spotifyUrl = '';
-
         if (spotifyData) {
-          // Mantemos o ID do Spotify para novos artistas; para artistas antigos a hidratação preserva o ID local.
           artistId = spotifyData.id;
           artistName = spotifyData.name;
-          artistGenre = spotifyData.genre;
+          artistGenre = spotifyData.genre || fallbackGenre || 'Outro';
           artistImage = spotifyData.image;
           spotifyId = spotifyData.id;
           spotifyUrl = spotifyData.spotifyUrl;
         } else {
-          artistId = inputName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          artistId = inputName.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
           artistName = inputName;
           artistGenre = fallbackGenre || 'Outro';
           artistImage = '';
@@ -1237,147 +1312,163 @@
         if (!genreColors[artistGenre]) {
           const randomColors = ['#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
           genreColors[artistGenre] = randomColors[Math.floor(Math.random() * randomColors.length)];
+          const { error: genreError } = await db.from('genre_colors').insert({ genre: artistGenre, color: genreColors[artistGenre] });
+          if (genreError && genreError.code !== '23505') throw genreError;
         }
 
-        graphData.nodes.push({ id: artistId, name: artistName, genre: artistGenre, image: artistImage, spotifyId, spotifyUrl });
+        const { error } = await db.from('artists').insert({
+          id: artistId, name: artistName, genre: artistGenre, image_url: artistImage || null,
+          spotify_id: spotifyId || null, spotify_url: spotifyUrl || null
+        });
+        if (error) throw error;
+
+        await loadDataFromSupabase();
         updateGraph();
         renderGenresManager();
         document.getElementById('new-artist-name').value = '';
-
-        showToast(spotifyData ? `"${artistName}" cadastrado via Spotify!` : `"${artistName}" cadastrado manualmente.`);
+        showToast(spotifyData ? `"${artistName}" salvo via Spotify!` : `"${artistName}" salvo no banco.`);
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao salvar artista: ' + (error.message || error));
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerText = 'Buscar e Cadastrar';
       }
     }
 
-    function handleAddLink(e) {
+    async function handleAddLink(e) {
       e.preventDefault();
+      if (!await requireAdmin()) return;
       const a1 = document.getElementById('link-artist1-select').value;
       const a2 = document.getElementById('link-artist2-select').value;
       const a3 = document.getElementById('link-artist3-select').value;
       const track = document.getElementById('link-track-input').value.trim();
-      const year = parseInt(document.getElementById('link-year-input').value) || 2024;
-
-      if (!a1 || !a2) {
-        alert("Selecione pelo menos os dois primeiros artistas.");
-        return;
-      }
-
-      const artists = [a1, a2];
-      if (a3) artists.push(a3);
-
+      const year = parseInt(document.getElementById('link-year-input').value) || new Date().getFullYear();
+      if (!a1 || !a2) return alert("Selecione pelo menos os dois primeiros artistas.");
+      const artists = [a1, a2, ...(a3 ? [a3] : [])];
       const uniqueArtists = [...new Set(artists)];
-      if (uniqueArtists.length < artists.length) {
-        alert("Por favor, selecione artistas diferentes para a colaboração.");
-        return;
+      if (uniqueArtists.length < artists.length) return alert("Por favor, selecione artistas diferentes para a colaboração.");
+
+      try {
+        const { data: collab, error } = await db.from('collaborations').insert({ track, year }).select('id').single();
+        if (error) throw error;
+        const { error: bridgeError } = await db.from('collaboration_artists').insert(uniqueArtists.map(artist_id => ({ collaboration_id: collab.id, artist_id })));
+        if (bridgeError) {
+          await db.from('collaborations').delete().eq('id', collab.id);
+          throw bridgeError;
+        }
+        await loadDataFromSupabase();
+        updateGraph();
+        document.getElementById('link-track-input').value = '';
+        showToast("Colaboração salva permanentemente!");
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao salvar colaboração: ' + (error.message || error));
       }
-
-      graphData.links.push({ artists: uniqueArtists, track, year });
-      updateGraph();
-
-      document.getElementById('link-track-input').value = '';
-      showToast("Conexão criada com sucesso!");
     }
 
-    function handleEditArtist(e) {
+    async function handleEditArtist(e) {
       e.preventDefault();
-      if (!selectedNode) return;
-
-      selectedNode.name = document.getElementById('edit-artist-name').value;
-      selectedNode.genre = document.getElementById('edit-artist-genre').value;
-      selectedNode.image = document.getElementById('edit-artist-image').value.trim();
-
+      if (!selectedNode || !await requireAdmin()) return;
+      const changes = {
+        name: document.getElementById('edit-artist-name').value.trim(),
+        genre: document.getElementById('edit-artist-genre').value,
+        image_url: document.getElementById('edit-artist-image').value.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await db.from('artists').update(changes).eq('id', selectedNode.id);
+      if (error) return alert('Erro ao atualizar artista: ' + error.message);
+      await loadDataFromSupabase();
       updateGraph();
-      selectNode(selectedNode);
-      showToast("Artista atualizado!");
+      const refreshed = graphData.nodes.find(n => n.id === selectedNode.id);
+      if (refreshed) selectNode(refreshed);
+      showToast("Artista atualizado no Supabase!");
     }
 
-    function deleteCurrentArtist() {
-      if (!selectedNode) return;
+    async function deleteCurrentArtist() {
+      if (!selectedNode || !await requireAdmin()) return;
       if (!confirm(`Excluir ${selectedNode.name} e todas as suas colaborações?`)) return;
-
       const id = selectedNode.id;
-      graphData.nodes = graphData.nodes.filter(n => n.id !== id);
-      graphData.links = graphData.links.filter(l => {
-        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
-        return !ids.includes(id);
-      });
-
-      selectedNode = null;
-      document.getElementById('artist-details').classList.add('hidden');
-      document.getElementById('no-selection').classList.remove('hidden');
-
-      updateGraph();
-      showToast("Artista removido.");
+      try {
+        const { data: refs, error: refError } = await db.from('collaboration_artists').select('collaboration_id').eq('artist_id', id);
+        if (refError) throw refError;
+        const collabIds = [...new Set((refs || []).map(r => r.collaboration_id))];
+        if (collabIds.length) {
+          const { error: cError } = await db.from('collaborations').delete().in('id', collabIds);
+          if (cError) throw cError;
+        }
+        const { error } = await db.from('artists').delete().eq('id', id);
+        if (error) throw error;
+        selectedNode = null;
+        await loadDataFromSupabase();
+        document.getElementById('artist-details').classList.add('hidden');
+        document.getElementById('no-selection').classList.remove('hidden');
+        updateGraph();
+        showToast("Artista removido do banco.");
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao excluir artista: ' + (error.message || error));
+      }
     }
 
-    function deleteCurrentLink() {
-      if (!selectedLink) return;
-
-      graphData.links = graphData.links.filter(l => l !== selectedLink);
+    async function deleteCurrentLink() {
+      if (!selectedLink || !await requireAdmin()) return;
+      if (!selectedLink.dbId) return alert('Esta colaboração não possui ID do banco.');
+      if (!confirm(`Remover a colaboração “${selectedLink.track || 'sem título'}”?`)) return;
+      const { error } = await db.from('collaborations').delete().eq('id', selectedLink.dbId);
+      if (error) return alert('Erro ao remover colaboração: ' + error.message);
       selectedLink = null;
-
+      await loadDataFromSupabase();
       document.getElementById('link-details').classList.add('hidden');
       document.getElementById('no-selection').classList.remove('hidden');
-
       updateGraph();
-      showToast("Colaboração removida.");
+      showToast("Colaboração removida do banco.");
     }
 
     // --- GENRE MANAGEMENT ACTIONS ---
-    function handleAddGenre(e) {
+    async function handleAddGenre(e) {
       e.preventDefault();
+      if (!await requireAdmin()) return;
       const nameInput = document.getElementById('new-genre-name');
       const genreName = nameInput.value.trim();
       const color = document.getElementById('new-genre-color').value;
-
       if (!genreName) return;
-
-      if (genreColors[genreName]) {
-        alert("Este gênero já existe.");
-        return;
-      }
-
+      if (genreColors[genreName]) return alert("Este gênero já existe.");
+      const { error } = await db.from('genre_colors').insert({ genre: genreName, color });
+      if (error) return alert('Erro ao cadastrar gênero: ' + error.message);
       genreColors[genreName] = color;
       nameInput.value = '';
-
       updateGraph();
       renderGenresManager();
       showToast(`Gênero "${genreName}" adicionado!`);
     }
 
-    function updateGenreColor(genre, color) {
+    async function updateGenreColor(genre, color) {
+      if (!await requireAdmin()) return;
+      const { error } = await db.from('genre_colors').update({ color }).eq('genre', genre);
+      if (error) return alert('Erro ao alterar cor: ' + error.message);
       genreColors[genre] = color;
       updateGraph();
-      if (selectedNode && selectedNode.genre === genre) {
-        selectNode(selectedNode);
-      }
+      if (selectedNode && selectedNode.genre === genre) selectNode(selectedNode);
     }
 
-    function deleteGenre(genre) {
-      if (genre === "Outro") {
-        alert("O gênero 'Outro' é o padrão do sistema e não pode ser excluído.");
-        return;
-      }
-
+    async function deleteGenre(genre) {
+      if (!await requireAdmin()) return;
+      if (genre === "Outro") return alert("O gênero 'Outro' é o padrão do sistema e não pode ser excluído.");
       if (!confirm(`Excluir o gênero "${genre}"? Os artistas com este gênero passarão para "Outro".`)) return;
-
-      delete genreColors[genre];
-
-      if (!genreColors["Outro"]) {
-        genreColors["Outro"] = "#9CA3AF";
+      try {
+        const { error: artistError } = await db.from('artists').update({ genre: 'Outro', updated_at: new Date().toISOString() }).eq('genre', genre);
+        if (artistError) throw artistError;
+        const { error } = await db.from('genre_colors').delete().eq('genre', genre);
+        if (error) throw error;
+        await loadDataFromSupabase();
+        updateGraph();
+        renderGenresManager();
+        showToast(`Gênero "${genre}" removido.`);
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao excluir gênero: ' + (error.message || error));
       }
-
-      graphData.nodes.forEach(n => {
-        if (n.genre === genre) {
-          n.genre = "Outro";
-        }
-      });
-
-      updateGraph();
-      renderGenresManager();
-      showToast(`Gênero "${genre}" removido.`);
     }
 
     function renderGenresManager() {
