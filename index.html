@@ -244,6 +244,15 @@
                 <label class="text-xs text-gray-400 block mb-2">Créditos por artista</label>
                 <div id="edit-link-credits-list" class="space-y-2"></div>
               </div>
+              <div class="pt-2 border-t border-gray-800 space-y-2">
+                <label class="text-xs text-gray-400 block">Adicionar outro artista aos créditos</label>
+                <select id="edit-link-add-credit-artist" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan"></select>
+                <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+                  <label class="flex items-center gap-1"><input id="edit-add-credit-production" type="checkbox" checked> Produção</label>
+                  <label class="flex items-center gap-1"><input id="edit-add-credit-writing" type="checkbox"> Letra/Composição</label>
+                </div>
+                <button type="button" onclick="addCreditArtistToEditForm()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] py-1.5 rounded">Adicionar aos créditos</button>
+              </div>
               <div class="flex gap-2">
                 <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar colaboração</button>
                 <button type="button" onclick="deleteCurrentLink()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 px-3 rounded transition border border-red-500/30">Remover</button>
@@ -315,6 +324,16 @@
               <label class="flex items-center gap-1"><input id="link-artist3-production" type="checkbox"> Produção</label>
               <label class="flex items-center gap-1"><input id="link-artist3-writing" type="checkbox"> Letra/Composição</label>
             </div>
+          </div>
+          <div class="space-y-2 pt-2 border-t border-gray-800">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <label class="text-xs text-gray-300 block">Créditos adicionais (Opcional)</label>
+                <p class="text-[10px] text-gray-500">Produtores/compositores que não cantam na faixa. Selecione apenas artistas já cadastrados.</p>
+              </div>
+              <button type="button" onclick="addExtraCreditRow()" class="shrink-0 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] px-2 py-1.5 rounded">+ Crédito</button>
+            </div>
+            <div id="extra-credits-container" class="space-y-2"></div>
           </div>
           <div>
             <label class="text-xs text-gray-400 block mb-1">Nome da Faixa / Projeto</label>
@@ -957,11 +976,17 @@
     let graphData = { nodes: [], links: [] };
 
     async function loadDataFromSupabase() {
-      const [artistsResult, collaborationsResult, colorsResult] = await Promise.all([
+      const [artistsResult, colorsResult] = await Promise.all([
         db.from('artists').select('id,name,genre,image_url,spotify_id,spotify_url'),
-        db.from('collaborations').select('id,track,album,year,collaboration_artists(artist_id,roles)').order('id'),
         db.from('genre_colors').select('genre,color')
       ]);
+      let collaborationsResult = await db.from('collaborations').select('id,track,album,year,collaboration_artists(artist_id,roles)').order('id');
+      if (collaborationsResult.error && /album/i.test(collaborationsResult.error.message || '')) {
+        supportsAlbumField = false;
+        collaborationsResult = await db.from('collaborations').select('id,track,year,collaboration_artists(artist_id,roles)').order('id');
+      } else {
+        supportsAlbumField = true;
+      }
 
       const errors = [artistsResult.error, collaborationsResult.error, colorsResult.error].filter(Boolean);
       if (errors.length) {
@@ -983,14 +1008,22 @@
           spotifyId: artist.spotify_id || '',
           spotifyUrl: artist.spotify_url || ''
         })),
-        links: (collaborationsResult.data || []).map(collab => ({
-          dbId: collab.id,
-          artists: (collab.collaboration_artists || []).map(item => item.artist_id),
-          credits: Object.fromEntries((collab.collaboration_artists || []).map(item => [item.artist_id, item.roles || ['performance']])),
-          track: collab.track || '',
-          album: collab.album || '',
-          year: collab.year || null
-        }))
+        links: (collaborationsResult.data || []).map(collab => {
+          const creditRows = collab.collaboration_artists || [];
+          const credits = Object.fromEntries(creditRows.map(item => [item.artist_id, item.roles || ['performance']]));
+          const performers = creditRows
+            .filter(item => (item.roles || ['performance']).includes('performance'))
+            .map(item => item.artist_id);
+          return {
+            dbId: collab.id,
+            artists: performers,
+            creditArtists: creditRows.map(item => item.artist_id),
+            credits,
+            track: collab.track || '',
+            album: collab.album || '',
+            year: collab.year || null
+          };
+        })
       };
 
       return graphData;
@@ -1006,6 +1039,7 @@
     let selectedNode = null;
     let selectedLink = null;
     let d3Edges = [];
+    let supportsAlbumField = true;
 
     window.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
@@ -1275,7 +1309,7 @@
       document.getElementById('edit-artist-image').value = node.image || '';
 
       const creditsFor = (collab, artistId) => (collab.credits && collab.credits[artistId]) || ['performance'];
-      const collabs = graphData.links.filter(l => l.artists.map(a => typeof a === 'object' ? a.id : a).includes(node.id));
+      const collabs = graphData.links.filter(l => Object.prototype.hasOwnProperty.call(l.credits || {}, node.id));
 
       const byRole = {
         performance: collabs.filter(c => creditsFor(c, node.id).includes('performance')),
@@ -1345,22 +1379,26 @@
       artistContainer.innerHTML = '';
 
       const artistNames = [];
-      link.artists.forEach((artRef, index) => {
-        const id = typeof artRef === 'object' ? artRef.id : artRef;
+      const allCreditIds = Object.keys(link.credits || {});
+      const orderedCreditIds = [
+        ...link.artists.map(a => typeof a === 'object' ? a.id : a),
+        ...allCreditIds.filter(id => !link.artists.map(a => typeof a === 'object' ? a.id : a).includes(id))
+      ];
+      orderedCreditIds.forEach((id, index) => {
         const artist = graphData.nodes.find(n => n.id === id);
         const name = artist ? artist.name : id;
-        artistNames.push(name);
+        const roles = (link.credits && link.credits[id]) || ['performance'];
+        if (roles.includes('performance')) artistNames.push(name);
 
         const span = document.createElement('span');
-        span.className = "font-semibold text-brand-accent text-center";
+        span.className = roles.includes('performance') ? "font-semibold text-brand-accent text-center" : "font-semibold text-brand-cyan text-center";
         const roleLabels = { performance: 'Interpretação', production: 'Produção', writing: 'Letra' };
-        const roles = (link.credits && link.credits[id]) || ['performance'];
         span.innerHTML = `${name}<span class="block text-[9px] font-normal text-gray-500">${roles.map(r => roleLabels[r] || r).join(' · ')}</span>`;
         artistContainer.appendChild(span);
 
-        if (index < link.artists.length - 1) {
+        if (index < orderedCreditIds.length - 1) {
           const icon = document.createElement('i');
-          icon.setAttribute('data-lucide', 'plus');
+          icon.setAttribute('data-lucide', roles.includes('performance') ? 'plus' : 'dot');
           icon.className = "w-3 h-3 text-gray-500";
           artistContainer.appendChild(icon);
         }
@@ -1379,37 +1417,86 @@
       const container = document.getElementById('edit-link-credits-list');
       if (!container) return;
       container.innerHTML = '';
-      if (!link || !Array.isArray(link.artists)) return;
+      if (!link) return;
       const roleLabels = [
         ['performance', 'Interpretação'],
         ['production', 'Produção'],
         ['writing', 'Letra/Composição']
       ];
-      link.artists.forEach((artRef, index) => {
-        const id = typeof artRef === 'object' ? artRef.id : artRef;
+      const ids = Object.keys(link.credits || {});
+      ids.forEach(id => {
         const artist = graphData.nodes.find(n => n.id === id);
         const name = artist ? artist.name : id;
         const roles = (link.credits && link.credits[id]) || ['performance'];
         const row = document.createElement('div');
-        row.className = 'bg-gray-900/80 border border-gray-800 rounded p-2';
+        row.className = 'edit-credit-row bg-gray-900/80 border border-gray-800 rounded p-2';
+        row.dataset.artistId = id;
         row.innerHTML = `
-          <div class="text-xs font-semibold text-gray-200 mb-2">${name}</div>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="text-xs font-semibold text-gray-200">${name}</div>
+            ${!roles.includes('performance') ? `<button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover crédito</button>` : ''}
+          </div>
           <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
             ${roleLabels.map(([key, label]) => `<label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="${key}" class="edit-link-role" type="checkbox" ${roles.includes(key) ? 'checked' : ''}> ${label}</label>`).join('')}
           </div>
         `;
         container.appendChild(row);
       });
+      refreshEditAdditionalCreditOptions();
+    }
+
+    function refreshEditAdditionalCreditOptions() {
+      const select = document.getElementById('edit-link-add-credit-artist');
+      if (!select) return;
+      const usedIds = new Set(Array.from(document.querySelectorAll('#edit-link-credits-list .edit-credit-row')).map(row => row.dataset.artistId));
+      const options = graphData.nodes
+        .filter(n => !usedIds.has(n.id))
+        .slice()
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(n => `<option value="${n.id}">${n.name}</option>`)
+        .join('');
+      select.innerHTML = '<option value="">Selecione...</option>' + options;
+    }
+
+    function addCreditArtistToEditForm() {
+      const select = document.getElementById('edit-link-add-credit-artist');
+      const id = select?.value;
+      if (!id) return;
+      const production = document.getElementById('edit-add-credit-production').checked;
+      const writing = document.getElementById('edit-add-credit-writing').checked;
+      if (!production && !writing) return alert('Marque Produção e/ou Letra/Composição.');
+      const artist = graphData.nodes.find(n => n.id === id);
+      const container = document.getElementById('edit-link-credits-list');
+      const roles = [...(production ? ['production'] : []), ...(writing ? ['writing'] : [])];
+      const row = document.createElement('div');
+      row.className = 'edit-credit-row bg-gray-900/80 border border-gray-800 rounded p-2';
+      row.dataset.artistId = id;
+      row.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="text-xs font-semibold text-gray-200">${artist?.name || id}</div>
+          <button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover crédito</button>
+        </div>
+        <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="production" class="edit-link-role" type="checkbox" ${roles.includes('production') ? 'checked' : ''}> Produção</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="writing" class="edit-link-role" type="checkbox" ${roles.includes('writing') ? 'checked' : ''}> Letra/Composição</label>
+        </div>`;
+      container.appendChild(row);
+      select.value = '';
+      refreshEditAdditionalCreditOptions();
+    }
+
+    function removeCreditArtistFromEditForm(id) {
+      const row = document.querySelector(`#edit-link-credits-list .edit-credit-row[data-artist-id="${id}"]`);
+      if (row) row.remove();
+      refreshEditAdditionalCreditOptions();
     }
 
     function getEditedCreditsFromForm(link) {
       const credits = {};
-      if (!link || !Array.isArray(link.artists)) return credits;
-      link.artists.forEach(artRef => {
-        const id = typeof artRef === 'object' ? artRef.id : artRef;
-        const boxes = Array.from(document.querySelectorAll(`#edit-link-credits-list input[data-artist-id="${id}"]`));
-        const roles = boxes.filter(b => b.checked).map(b => b.dataset.role);
-        credits[id] = roles;
+      document.querySelectorAll('#edit-link-credits-list .edit-credit-row').forEach(row => {
+        const id = row.dataset.artistId;
+        const boxes = Array.from(row.querySelectorAll('input[data-role]'));
+        credits[id] = boxes.filter(b => b.checked).map(b => b.dataset.role);
       });
       return credits;
     }
@@ -1424,19 +1511,34 @@
       const credits = getEditedCreditsFromForm(selectedLink);
       const emptyCreditArtist = Object.keys(credits).find(id => !credits[id].length);
       if (emptyCreditArtist) return alert('Cada artista precisa ter pelo menos um crédito marcado.');
+      const performerCount = Object.values(credits).filter(roles => roles.includes('performance')).length;
+      if (performerCount < 2) return alert('A colaboração precisa manter pelo menos dois artistas com Interpretação.');
 
       try {
-        const { error: collabError } = await db.from('collaborations').update({
+        const collabPayload = supportsAlbumField ? {
           track,
           album: album || null,
           year,
           updated_at: new Date().toISOString()
-        }).eq('id', selectedLink.dbId);
+        } : {
+          track,
+          year,
+          updated_at: new Date().toISOString()
+        };
+        const { error: collabError } = await db.from('collaborations').update(collabPayload).eq('id', selectedLink.dbId);
         if (collabError) throw collabError;
 
-        for (const [artist_id, roles] of Object.entries(credits)) {
-          const { error: creditError } = await db.from('collaboration_artists').update({ roles }).eq('collaboration_id', selectedLink.dbId).eq('artist_id', artist_id);
+        const oldIds = Object.keys(selectedLink.credits || {});
+        const newIds = Object.keys(credits);
+        const rows = Object.entries(credits).map(([artist_id, roles]) => ({ collaboration_id: selectedLink.dbId, artist_id, roles }));
+        if (rows.length) {
+          const { error: creditError } = await db.from('collaboration_artists').upsert(rows, { onConflict: 'collaboration_id,artist_id' });
           if (creditError) throw creditError;
+        }
+        const removedIds = oldIds.filter(id => !newIds.includes(id));
+        if (removedIds.length) {
+          const { error: deleteCreditError } = await db.from('collaboration_artists').delete().eq('collaboration_id', selectedLink.dbId).in('artist_id', removedIds);
+          if (deleteCreditError) throw deleteCreditError;
         }
 
         await loadDataFromSupabase();
@@ -1466,6 +1568,57 @@
         console.error(error);
         alert('Erro ao buscar foto no Spotify.');
       }
+    }
+
+    let extraCreditRowCounter = 0;
+
+    function addExtraCreditRow() {
+      const container = document.getElementById('extra-credits-container');
+      if (!container) return;
+      const rowId = ++extraCreditRowCounter;
+      const row = document.createElement('div');
+      row.className = 'extra-credit-row bg-gray-950/60 border border-gray-800 rounded p-2 space-y-2';
+      row.dataset.rowId = rowId;
+      row.innerHTML = `
+        <div class="flex gap-2">
+          <select class="extra-credit-artist flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white"></select>
+          <button type="button" onclick="this.closest('.extra-credit-row').remove(); refreshExtraCreditOptions();" class="text-red-400 text-[10px] px-2">Remover</button>
+        </div>
+        <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
+          <label class="flex items-center gap-1"><input class="extra-credit-production" type="checkbox" checked> Produção</label>
+          <label class="flex items-center gap-1"><input class="extra-credit-writing" type="checkbox"> Letra/Composição</label>
+        </div>`;
+      container.appendChild(row);
+      refreshExtraCreditOptions();
+    }
+
+    function refreshExtraCreditOptions() {
+      const performerIds = new Set([1,2,3].map(i => document.getElementById(`link-artist${i}-select`)?.value).filter(Boolean));
+      const rows = Array.from(document.querySelectorAll('#extra-credits-container .extra-credit-row'));
+      const selectedExtra = new Set(rows.map(r => r.querySelector('.extra-credit-artist')?.value).filter(Boolean));
+      rows.forEach(row => {
+        const select = row.querySelector('.extra-credit-artist');
+        const current = select.value;
+        const options = graphData.nodes
+          .filter(n => !performerIds.has(n.id) && (!selectedExtra.has(n.id) || n.id === current))
+          .slice()
+          .sort((a,b) => a.name.localeCompare(b.name))
+          .map(n => `<option value="${n.id}">${n.name}</option>`)
+          .join('');
+        select.innerHTML = '<option value="">Selecione...</option>' + options;
+        if (current && Array.from(select.options).some(o => o.value === current)) select.value = current;
+        select.onchange = refreshExtraCreditOptions;
+      });
+    }
+
+    function getExtraCreditEntries() {
+      return Array.from(document.querySelectorAll('#extra-credits-container .extra-credit-row')).map(row => {
+        const artistId = row.querySelector('.extra-credit-artist')?.value || '';
+        const roles = [];
+        if (row.querySelector('.extra-credit-production')?.checked) roles.push('production');
+        if (row.querySelector('.extra-credit-writing')?.checked) roles.push('writing');
+        return [artistId, roles];
+      }).filter(([artistId]) => artistId);
     }
 
     // --- FORM ACTIONS ---
@@ -1564,11 +1717,19 @@
       };
       const slotEntries = [[a1, rolesForSlot(1)], [a2, rolesForSlot(2)], ...(a3 ? [[a3, rolesForSlot(3)]] : [])];
       if (slotEntries.some(([, roles]) => roles.length === 0)) return alert('Marque pelo menos um crédito para cada artista selecionado.');
+      const performerCount = slotEntries.filter(([, roles]) => roles.includes('performance')).length;
+      if (performerCount < 2) return alert('Selecione pelo menos dois artistas com Interpretação.');
+      const extraEntries = getExtraCreditEntries();
+      if (extraEntries.some(([, roles]) => roles.length === 0)) return alert('Nos créditos adicionais, marque Produção e/ou Letra/Composição.');
+      const allIds = [...slotEntries.map(([id]) => id), ...extraEntries.map(([id]) => id)];
+      if (new Set(allIds).size !== allIds.length) return alert('O mesmo artista não pode aparecer duas vezes nos créditos.');
+      const allCreditEntries = [...slotEntries, ...extraEntries];
 
       try {
-        const { data: collab, error } = await db.from('collaborations').insert({ track, album: album || null, year }).select('id').single();
+        const collabPayload = supportsAlbumField ? { track, album: album || null, year } : { track, year };
+        const { data: collab, error } = await db.from('collaborations').insert(collabPayload).select('id').single();
         if (error) throw error;
-        const creditRows = slotEntries.map(([artist_id, roles]) => ({ collaboration_id: collab.id, artist_id, roles }));
+        const creditRows = allCreditEntries.map(([artist_id, roles]) => ({ collaboration_id: collab.id, artist_id, roles }));
         const { error: bridgeError } = await db.from('collaboration_artists').insert(creditRows);
         if (bridgeError) {
           await db.from('collaborations').delete().eq('id', collab.id);
@@ -1578,6 +1739,8 @@
         updateGraph();
         document.getElementById('link-track-input').value = '';
         document.getElementById('link-album-input').value = '';
+        document.getElementById('extra-credits-container').innerHTML = '';
+        extraCreditRowCounter = 0;
         [1,2,3].forEach(slot => {
           document.getElementById(`link-artist${slot}-performance`).checked = true;
           document.getElementById(`link-artist${slot}-production`).checked = false;
@@ -1789,6 +1952,8 @@
       s1.innerHTML = '<option value="">Selecione...</option>' + options;
       s2.innerHTML = '<option value="">Selecione...</option>' + options;
       s3.innerHTML = '<option value="">Nenhum (Apenas duo)</option>' + options;
+      [s1, s2, s3].forEach(s => s.onchange = refreshExtraCreditOptions);
+      refreshExtraCreditOptions();
 
       const genreOptions = Object.keys(genreColors)
         .sort()
