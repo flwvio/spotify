@@ -228,6 +228,14 @@
 
             <form id="edit-link-form" onsubmit="handleEditLink(event)" class="admin-only space-y-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
               <h3 class="text-xs font-semibold uppercase text-gray-400">Editar colaboração selecionada</h3>
+              <div class="space-y-2 bg-gray-900/70 border border-gray-800 rounded p-2.5">
+                <label class="text-xs text-gray-400 block">Buscar dados no Spotify</label>
+                <div class="flex gap-2">
+                  <input type="text" id="edit-spotify-track-query" placeholder="Ex: DEAN And July" class="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-green-500">
+                  <button type="button" onclick="searchSpotifyTracksForForm('edit')" class="bg-green-600 hover:bg-green-500 text-white text-[11px] px-3 py-1.5 rounded font-semibold transition">Buscar</button>
+                </div>
+                <div id="edit-spotify-track-results" class="space-y-2 hidden"></div>
+              </div>
               <div>
                 <label class="text-xs text-gray-400 block mb-1">Faixa</label>
                 <input type="text" id="edit-link-track" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan">
@@ -334,6 +342,15 @@
               <button type="button" onclick="addExtraCreditRow()" class="shrink-0 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] px-2 py-1.5 rounded">+ Crédito</button>
             </div>
             <div id="extra-credits-container" class="space-y-2"></div>
+          </div>
+          <div class="space-y-2 bg-gray-900/70 border border-gray-800 rounded p-2.5">
+            <label class="text-xs text-gray-400 block">Buscar faixa no Spotify</label>
+            <div class="flex gap-2">
+              <input type="text" id="add-spotify-track-query" placeholder="Ex: Crush LeeHi For You" class="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-green-500">
+              <button type="button" onclick="searchSpotifyTracksForForm('add')" class="bg-green-600 hover:bg-green-500 text-white text-[11px] px-3 py-1.5 rounded font-semibold transition">Buscar</button>
+            </div>
+            <div class="text-[10px] text-gray-500">Use nome da faixa, artista ou algumas palavras. Você escolhe o resultado antes de preencher.</div>
+            <div id="add-spotify-track-results" class="space-y-2 hidden"></div>
           </div>
           <div>
             <label class="text-xs text-gray-400 block mb-1">Nome da Faixa / Projeto</label>
@@ -833,6 +850,8 @@
         await enrichExistingArtists();
       } else if (pending.action === 'add-artist' && pending.payload) {
         await addArtistFromValues(pending.payload.inputName, pending.payload.fallbackGenre);
+      } else if (pending.action === 'spotify-track-search' && pending.payload) {
+        await searchSpotifyTracksForForm(pending.payload.target || 'add', pending.payload.query || '');
       }
     }
 
@@ -1374,6 +1393,16 @@
       document.getElementById('edit-link-track').value = link.track || '';
       document.getElementById('edit-link-album').value = link.album || '';
       document.getElementById('edit-link-year').value = link.year || '';
+      const editSpotifyQuery = document.getElementById('edit-spotify-track-query');
+      if (editSpotifyQuery) {
+        const currentNames = link.artists.map(ref => {
+          const id = typeof ref === 'object' ? ref.id : ref;
+          return graphData.nodes.find(n => n.id === id)?.name || '';
+        }).filter(Boolean);
+        editSpotifyQuery.value = `${currentNames.join(' ')} ${link.track || ''}`.trim();
+      }
+      const editResults = document.getElementById('edit-spotify-track-results');
+      if (editResults) { editResults.innerHTML = ''; editResults.classList.add('hidden'); }
 
       const artistContainer = document.getElementById('link-artists-container');
       artistContainer.innerHTML = '';
@@ -1411,6 +1440,101 @@
       spotifyBtn.href = `https://open.spotify.com/search/${searchQuery}`;
 
       switchTab('info');
+    }
+
+    function spotifyTrackResultHtml(item, index, target) {
+      const cover = item.album?.images?.[1]?.url || item.album?.images?.[0]?.url || '';
+      const artists = (item.artists || []).map(a => a.name).join(', ');
+      const album = item.album?.name || '';
+      const releaseDate = item.album?.release_date || '';
+      const year = releaseDate ? releaseDate.slice(0, 4) : '';
+      const safeCover = cover ? `<img src="${cover}" alt="" class="w-12 h-12 rounded object-cover border border-gray-700 flex-none">` : `<div class="w-12 h-12 rounded bg-gray-800 border border-gray-700 flex items-center justify-center flex-none"><i data-lucide="music" class="w-4 h-4 text-gray-500"></i></div>`;
+      return `
+        <div class="bg-gray-950 border border-gray-800 rounded p-2 flex gap-2 items-center">
+          ${safeCover}
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-semibold text-gray-100 truncate">${escapeHtml(item.name || '')}</div>
+            <div class="text-[10px] text-gray-400 truncate">${escapeHtml(artists)}</div>
+            <div class="text-[10px] text-gray-500 truncate">${escapeHtml(album)}${year ? ' • ' + year : ''}</div>
+          </div>
+          <button type="button" onclick="applySpotifyTrackResult('${target}', ${index})" class="bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white border border-green-600/30 text-[10px] px-2 py-1.5 rounded transition flex-none">Usar</button>
+        </div>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    }
+
+    const spotifyTrackSearchCache = { add: [], edit: [] };
+
+    async function fetchTracksFromSpotify(query) {
+      const token = await getSpotifyToken();
+      if (!token) return null;
+      const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=8`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.status === 401) {
+        sessionStorage.removeItem(SPOTIFY_TOKEN_KEY);
+        updateSpotifyUi();
+        return null;
+      }
+      if (!response.ok) throw new Error(`Spotify track search HTTP ${response.status}`);
+      const data = await response.json();
+      return data.tracks?.items || [];
+    }
+
+    async function searchSpotifyTracksForForm(target, forcedQuery = '') {
+      if (!await requireAdmin()) return;
+      const input = document.getElementById(`${target}-spotify-track-query`);
+      const results = document.getElementById(`${target}-spotify-track-results`);
+      if (!input || !results) return;
+      const query = (forcedQuery || input.value || '').trim();
+      if (!query) return alert('Digite algumas palavras para buscar no Spotify.');
+      input.value = query;
+
+      const token = await getSpotifyToken();
+      if (!token) {
+        await startSpotifyLogin('spotify-track-search', { target, query });
+        return;
+      }
+
+      results.classList.remove('hidden');
+      results.innerHTML = '<div class="text-[11px] text-gray-500 py-2">Buscando no Spotify...</div>';
+      try {
+        const items = await fetchTracksFromSpotify(query);
+        spotifyTrackSearchCache[target] = items || [];
+        if (!items || !items.length) {
+          results.innerHTML = '<div class="text-[11px] text-gray-500 py-2">Nenhuma faixa encontrada. Tente menos palavras ou outro nome.</div>';
+          return;
+        }
+        results.innerHTML = items.map((item, index) => spotifyTrackResultHtml(item, index, target)).join('');
+        lucide.createIcons();
+      } catch (error) {
+        console.error(error);
+        results.innerHTML = '<div class="text-[11px] text-red-400 py-2">Não foi possível consultar o Spotify agora.</div>';
+      }
+    }
+
+    function applySpotifyTrackResult(target, index) {
+      const item = spotifyTrackSearchCache[target]?.[index];
+      if (!item) return;
+      const album = item.album?.name || '';
+      const releaseDate = item.album?.release_date || '';
+      const year = releaseDate ? parseInt(releaseDate.slice(0, 4), 10) : '';
+      if (target === 'add') {
+        document.getElementById('link-track-input').value = item.name || '';
+        document.getElementById('link-album-input').value = album;
+        if (year) document.getElementById('link-year-input').value = year;
+        const resultBox = document.getElementById('add-spotify-track-results');
+        if (resultBox) resultBox.classList.add('hidden');
+      } else {
+        document.getElementById('edit-link-track').value = item.name || '';
+        document.getElementById('edit-link-album').value = album;
+        if (year) document.getElementById('edit-link-year').value = year;
+        const resultBox = document.getElementById('edit-spotify-track-results');
+        if (resultBox) resultBox.classList.add('hidden');
+      }
+      showToast(`Spotify: “${item.name}” selecionada. Confira e salve.`);
     }
 
     function renderEditLinkCredits(link) {
