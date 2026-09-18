@@ -328,19 +328,39 @@
               <button data-artist-panel="writing" onclick="showArtistPanel('writing')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Composição</button>
             </div>
             <div id="artist-panel-performance" class="artist-subpanel">
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Participações / Interpretação</h3>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Participações / Interpretação</h3>
+                <select id="artist-performance-sort" onchange="updateArtistPanelSort('performance', this.value)" class="bg-black/30 border border-white/[.07] rounded-lg px-2 py-1 text-[10px] text-gray-300 focus:outline-none">
+                  <option value="recent">Mais recente</option><option value="oldest">Mais antigo</option><option value="az">A–Z</option><option value="za">Z–A</option>
+                </select>
+              </div>
               <ul id="artist-performance-list" class="space-y-2 text-sm"></ul>
             </div>
             <div id="artist-panel-albums" class="artist-subpanel hidden">
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Álbuns / Projetos</h3>
-              <div id="artist-albums-list" class="space-y-2 text-sm"></div>
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Álbuns / Projetos</h3>
+                <select id="artist-albums-sort" onchange="updateArtistPanelSort('albums', this.value)" class="bg-black/30 border border-white/[.07] rounded-lg px-2 py-1 text-[10px] text-gray-300 focus:outline-none">
+                  <option value="recent">Mais recente</option><option value="oldest">Mais antigo</option><option value="az">A–Z</option><option value="za">Z–A</option><option value="tracks">Mais faixas</option>
+                </select>
+              </div>
+              <div id="artist-albums-list" class="grid grid-cols-3 gap-2 text-sm"></div>
             </div>
             <div id="artist-panel-production" class="artist-subpanel hidden">
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Músicas produzidas</h3>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Músicas produzidas</h3>
+                <select id="artist-production-sort" onchange="updateArtistPanelSort('production', this.value)" class="bg-black/30 border border-white/[.07] rounded-lg px-2 py-1 text-[10px] text-gray-300 focus:outline-none">
+                  <option value="recent">Mais recente</option><option value="oldest">Mais antigo</option><option value="az">A–Z</option><option value="za">Z–A</option>
+                </select>
+              </div>
               <ul id="artist-production-list" class="space-y-2 text-sm"></ul>
             </div>
             <div id="artist-panel-writing" class="artist-subpanel hidden">
-              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Letra / Composição</h3>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Letra / Composição</h3>
+                <select id="artist-writing-sort" onchange="updateArtistPanelSort('writing', this.value)" class="bg-black/30 border border-white/[.07] rounded-lg px-2 py-1 text-[10px] text-gray-300 focus:outline-none">
+                  <option value="recent">Mais recente</option><option value="oldest">Mais antigo</option><option value="az">A–Z</option><option value="za">Z–A</option>
+                </select>
+              </div>
               <ul id="artist-writing-list" class="space-y-2 text-sm"></ul>
             </div>
           </div>
@@ -746,6 +766,23 @@
         const active = btn.dataset.artistPanel === panel;
         btn.classList.toggle('active', active); btn.classList.toggle('bg-white/[.06]', active); btn.classList.toggle('text-white', active); btn.classList.toggle('text-gray-500', !active);
       });
+    }
+    const artistPanelSort = { performance: 'recent', albums: 'recent', production: 'recent', writing: 'recent' };
+    function updateArtistPanelSort(panel, value) {
+      artistPanelSort[panel] = value;
+      const activePanel = document.querySelector('.artist-panel-btn.active')?.dataset.artistPanel || panel;
+      if (selectedNode) {
+        const node = selectedNode;
+        selectNode(node);
+        showArtistPanel(activePanel);
+      }
+    }
+    function sortArtistTracks(items, mode='recent') {
+      const arr = items.slice();
+      if (mode === 'oldest') return arr.sort((a,b) => (a.year||9999)-(b.year||9999) || (a.track||'').localeCompare(b.track||''));
+      if (mode === 'az') return arr.sort((a,b) => (a.track||'').localeCompare(b.track||''));
+      if (mode === 'za') return arr.sort((a,b) => (b.track||'').localeCompare(a.track||''));
+      return arr.sort((a,b) => (b.year||0)-(a.year||0) || (a.track||'').localeCompare(b.track||''));
     }
     function openSettingsDrawer() { openDetailsDrawer(); switchTab('settings'); }
     function openAdminDrawer() { openDetailsDrawer(); switchTab('settings'); setTimeout(() => document.getElementById('admin-password-input')?.focus(), 120); }
@@ -1743,14 +1780,14 @@
       document.getElementById('production-count').innerText = byRole.production.length;
       document.getElementById('writing-count').innerText = byRole.writing.length;
 
-      function renderArtistCreditList(listId, items, accentClass) {
+      function renderArtistCreditList(listId, items, accentClass, sortMode='recent') {
         const list = document.getElementById(listId);
         list.innerHTML = '';
         if (!items.length) {
           list.innerHTML = '<li class="text-xs text-gray-600 italic">Nenhum crédito cadastrado ainda.</li>';
           return;
         }
-        items.forEach(c => {
+        sortArtistTracks(items, sortMode).forEach(c => {
           const partnerNames = c.artists
             .map(a => typeof a === 'object' ? a.id : a)
             .filter(id => id !== node.id)
@@ -1773,9 +1810,13 @@
         });
       }
 
-      renderArtistCreditList('artist-performance-list', byRole.performance, 'text-brand-pink');
-      renderArtistCreditList('artist-production-list', byRole.production, 'text-brand-cyan');
-      renderArtistCreditList('artist-writing-list', byRole.writing, 'text-brand-accent');
+      const perfSort = document.getElementById('artist-performance-sort'); if (perfSort) perfSort.value = artistPanelSort.performance;
+      const prodSort = document.getElementById('artist-production-sort'); if (prodSort) prodSort.value = artistPanelSort.production;
+      const writeSort = document.getElementById('artist-writing-sort'); if (writeSort) writeSort.value = artistPanelSort.writing;
+      const albumSort = document.getElementById('artist-albums-sort'); if (albumSort) albumSort.value = artistPanelSort.albums;
+      renderArtistCreditList('artist-performance-list', byRole.performance, 'text-brand-pink', artistPanelSort.performance);
+      renderArtistCreditList('artist-production-list', byRole.production, 'text-brand-cyan', artistPanelSort.production);
+      renderArtistCreditList('artist-writing-list', byRole.writing, 'text-brand-accent', artistPanelSort.writing);
 
       const albumsList = document.getElementById('artist-albums-list');
       albumsList.innerHTML = '';
@@ -1786,24 +1827,36 @@
         albumGroups.get(albumName).push(c);
       });
       if (!albumGroups.size) {
-        albumsList.innerHTML = '<div class="text-xs text-gray-600 italic">Nenhum álbum/projeto cadastrado ainda.</div>';
+        albumsList.innerHTML = '<div class="col-span-3 text-xs text-gray-600 italic">Nenhum álbum/projeto cadastrado ainda.</div>';
       } else {
-        [...albumGroups.entries()].sort((a,b) => a[0].localeCompare(b[0])).forEach(([albumName, tracks]) => {
-          const card = document.createElement('div');
-          card.className = 'bg-gray-900/80 border border-gray-800 rounded p-2';
-          const sortedTracks = tracks.slice().sort((a,b) => (a.year || 0) - (b.year || 0) || (a.track || '').localeCompare(b.track || ''));
+        const albumEntries = [...albumGroups.entries()].map(([albumName, tracks]) => {
+          const years = tracks.map(t => t.year).filter(Boolean);
+          const year = years.length ? Math.max(...years) : null;
+          const oldestYear = years.length ? Math.min(...years) : null;
+          const cover = tracks.find(t => t.albumImage)?.albumImage || '';
+          return { albumName, tracks, year, oldestYear, cover };
+        });
+        albumEntries.sort((a,b) => {
+          const mode = artistPanelSort.albums;
+          if (mode === 'oldest') return (a.oldestYear||9999)-(b.oldestYear||9999) || a.albumName.localeCompare(b.albumName);
+          if (mode === 'az') return a.albumName.localeCompare(b.albumName);
+          if (mode === 'za') return b.albumName.localeCompare(a.albumName);
+          if (mode === 'tracks') return b.tracks.length-a.tracks.length || a.albumName.localeCompare(b.albumName);
+          return (b.year||0)-(a.year||0) || a.albumName.localeCompare(b.albumName);
+        });
+        albumEntries.forEach(({albumName, tracks, year, cover}) => {
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'group text-left min-w-0';
+          card.onclick = () => globalOpenAlbum(encodeURIComponent(albumName));
           card.innerHTML = `
-            <div class="flex items-center justify-between gap-2 mb-1">
-              <div class="font-semibold text-gray-200 truncate">${albumName}</div>
-              <span class="text-[10px] text-gray-500 flex-none">${tracks.length} faixa${tracks.length === 1 ? '' : 's'}</span>
+            <div class="aspect-square w-full rounded-xl overflow-hidden border border-white/[.07] bg-white/[.025] shadow-sm group-hover:border-white/[.18] transition relative">
+              ${cover ? `<img src="${escapeHtml(cover)}" alt="" class="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300">` : `<div class="w-full h-full grid place-items-center bg-gradient-to-br from-violet-500/10 to-cyan-500/5"><i data-lucide="disc-3" class="w-7 h-7 text-gray-600"></i></div>`}
+              <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/80 to-transparent"></div>
+              <div class="absolute bottom-2 right-2 text-[9px] px-1.5 py-0.5 rounded-full bg-black/60 border border-white/[.08] text-gray-300">${tracks.length} faixa${tracks.length===1?'':'s'}</div>
             </div>
-            <div class="space-y-1">${sortedTracks.map(c => `<button type="button" data-collab-id="${c.dbId}" class="artist-album-track w-full text-left text-xs text-gray-400 hover:text-white py-1 border-t border-gray-800/70 first:border-t-0">${c.track || 'Colaboração'}${c.year ? ` <span class="text-gray-600">• ${c.year}</span>` : ''}</button>`).join('')}</div>`;
-          card.querySelectorAll('.artist-album-track').forEach(btn => {
-            btn.onclick = () => {
-              const collab = graphData.links.find(l => String(l.dbId) === btn.dataset.collabId);
-              if (collab) selectLink(collab, node.id);
-            };
-          });
+            <div class="mt-2 font-semibold text-[11px] leading-tight text-gray-200 line-clamp-2 min-h-[28px]">${escapeHtml(albumName)}</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">${year || 'Ano não informado'}</div>`;
           albumsList.appendChild(card);
         });
       }
