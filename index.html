@@ -80,9 +80,151 @@
       border-radius: 3px;
     }
     body:not(.is-admin) .admin-only { display: none !important; }
+
+    :root {
+      --mg-bg: #080A0F;
+      --mg-surface: #10131A;
+      --mg-card: #151923;
+      --mg-card-2: #1A1F2B;
+      --mg-border: rgba(148, 163, 184, 0.14);
+      --mg-text: #F6F7FB;
+      --mg-muted: #8D96AA;
+      --mg-violet: #8B5CF6;
+      --mg-pink: #EC4899;
+      --mg-cyan: #22D3EE;
+      --mg-green: #1DB954;
+    }
+    html, body { background: var(--mg-bg); }
+    body {
+      background:
+        radial-gradient(circle at 30% 10%, rgba(139,92,246,.10), transparent 28%),
+        radial-gradient(circle at 80% 80%, rgba(34,211,238,.055), transparent 26%),
+        var(--mg-bg);
+      color: var(--mg-text);
+      overflow: hidden;
+    }
+    .mg-topbar {
+      position: fixed; inset: 0 0 auto 0; height: 64px; z-index: 60;
+      display: flex; align-items: center; gap: 18px; padding: 0 18px;
+      background: rgba(8,10,15,.82); backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--mg-border);
+    }
+    .mg-brand { display:flex; align-items:center; gap:10px; min-width:max-content; }
+    .mg-brand-mark { width:32px; height:32px; display:grid; place-items:center; border-radius:11px; background:linear-gradient(135deg,rgba(139,92,246,.24),rgba(34,211,238,.16)); border:1px solid rgba(139,92,246,.28); box-shadow:0 0 24px rgba(139,92,246,.08); }
+    .mg-brand-title { font-weight:760; letter-spacing:-.02em; }
+    .mg-nav { display:flex; align-items:center; gap:4px; }
+    .mg-nav-btn { color:#9AA3B7; padding:8px 11px; border-radius:10px; font-size:12px; font-weight:650; transition:.18s ease; }
+    .mg-nav-btn:hover, .mg-nav-btn.active { color:white; background:rgba(255,255,255,.055); }
+    .mg-nav-btn.active { box-shadow: inset 0 0 0 1px rgba(255,255,255,.045); }
+    .mg-search-shell { position:relative; margin-left:auto; width:min(360px,32vw); }
+    .mg-global-search { width:100%; height:38px; border-radius:12px; padding:0 38px 0 38px; background:rgba(21,25,35,.78); border:1px solid var(--mg-border); color:white; outline:none; font-size:13px; transition:.2s; }
+    .mg-global-search:focus { border-color:rgba(139,92,246,.55); box-shadow:0 0 0 3px rgba(139,92,246,.09); }
+    .mg-search-results { position:absolute; top:46px; right:0; width:min(440px,92vw); max-height:62vh; overflow:auto; border-radius:16px; padding:7px; background:rgba(15,18,26,.97); border:1px solid var(--mg-border); box-shadow:0 24px 80px rgba(0,0,0,.48); backdrop-filter:blur(24px); }
+    .mg-search-item { width:100%; display:flex; align-items:center; gap:10px; padding:9px; border-radius:11px; text-align:left; transition:.15s; }
+    .mg-search-item:hover { background:rgba(255,255,255,.055); }
+    .mg-icon-btn { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; color:#A9B1C3; background:rgba(21,25,35,.74); border:1px solid var(--mg-border); transition:.18s; }
+    .mg-icon-btn:hover { color:white; background:rgba(255,255,255,.07); }
+
+    #sidebar {
+      position: fixed !important; top:76px; right:12px; bottom:12px; left:auto;
+      width:min(430px, calc(100vw - 24px)) !important; height:auto !important;
+      z-index:55; border:1px solid var(--mg-border) !important; border-radius:22px;
+      background:rgba(16,19,26,.94) !important; backdrop-filter:blur(26px);
+      box-shadow:0 28px 90px rgba(0,0,0,.48); overflow:hidden;
+      transform:translateX(calc(100% + 30px)); opacity:0; pointer-events:none;
+      transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+    }
+    body.drawer-open #sidebar { transform:translateX(0); opacity:1; pointer-events:auto; }
+    #sidebar > .p-4.border-b { background:transparent !important; border-color:var(--mg-border) !important; }
+    #sidebar > .p-4.border-b h1 { color:white; background:none; -webkit-text-fill-color:initial; font-size:14px; }
+    #sidebar .border-gray-800, #sidebar .border-gray-700 { border-color:var(--mg-border) !important; }
+    #sidebar .bg-gray-900\/50, #sidebar .bg-gray-900\/40, #sidebar .bg-gray-900\/60, #sidebar .bg-gray-900\/70, #sidebar .bg-gray-900\/80 { background:rgba(17,20,28,.72) !important; }
+    #sidebar input, #sidebar select, #sidebar textarea { border-radius:11px !important; background:#0E1118 !important; border-color:rgba(148,163,184,.16) !important; }
+    #sidebar button { border-radius:10px; }
+    .mg-drawer-close { margin-left:auto; }
+    .mg-drawer-tabs { padding:6px; margin:8px 10px 0; border:1px solid var(--mg-border) !important; border-radius:13px; background:rgba(8,10,15,.5) !important; gap:3px; }
+    .mg-drawer-tabs button { border:0 !important; border-radius:9px !important; padding:8px 5px !important; }
+
+    #artist-avatar { width:92px !important; height:92px !important; border-width:3px !important; font-size:28px !important; box-shadow:0 14px 40px rgba(0,0,0,.32); }
+    #artist-details > .flex.items-center { align-items:flex-end; padding:12px 4px 8px; }
+    #artist-name { font-size:28px !important; line-height:1.05; letter-spacing:-.035em; }
+    #artist-genre { margin-top:7px; background:rgba(139,92,246,.10) !important; border-color:rgba(139,92,246,.22) !important; color:#C4B5FD !important; }
+    .mg-edit-trigger { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#AAB2C3; padding:7px 10px; border:1px solid var(--mg-border); border-radius:10px; background:rgba(255,255,255,.025); }
+    .mg-stat-card { background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)); border:1px solid var(--mg-border); border-radius:14px; padding:11px; }
+    #artist-performance-list li, #artist-production-list li, #artist-writing-list li, #artist-albums-list > div { border-radius:13px !important; background:rgba(17,20,28,.72) !important; border-color:var(--mg-border) !important; }
+
+    #link-details > div { background:transparent !important; border:0 !important; padding:2px !important; }
+    .mg-track-hero { display:flex; gap:14px; align-items:flex-end; padding:8px 2px 14px; }
+    .mg-track-cover { width:112px; height:112px; border-radius:16px; flex:none; background:#151923 center/cover no-repeat; border:1px solid var(--mg-border); box-shadow:0 18px 46px rgba(0,0,0,.35); display:grid; place-items:center; overflow:hidden; }
+    #link-track-title { font-size:25px !important; letter-spacing:-.03em; line-height:1.08; }
+    #link-artists-container > div { background:rgba(17,20,28,.72) !important; border:1px solid var(--mg-border); border-radius:13px !important; }
+
+    main#graph-main { position:fixed; inset:64px 0 0 0; height:auto !important; width:auto !important; background:transparent !important; }
+    #graph-svg { background:transparent; }
+    .node-circle { filter: drop-shadow(0 8px 12px rgba(0,0,0,.28)); }
+    .node-label { font-size:11px; fill:#D9DEEA; text-shadow:0 2px 8px rgba(0,0,0,.95); }
+    .link { stroke-opacity:.28; }
+    .link:hover { stroke-opacity:.92; }
+    .mg-graph-controls { position:absolute; left:18px; bottom:18px; z-index:12; display:flex; align-items:center; gap:6px; padding:6px; border:1px solid var(--mg-border); border-radius:14px; background:rgba(13,16,23,.78); backdrop-filter:blur(18px); box-shadow:0 12px 40px rgba(0,0,0,.24); }
+    .mg-role-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:9px; font-size:11px; color:#8E98AB; transition:.18s; }
+    .mg-role-btn:hover { color:#E8EBF2; background:rgba(255,255,255,.045); }
+    .mg-role-btn.active { color:white; background:rgba(139,92,246,.16); box-shadow:inset 0 0 0 1px rgba(139,92,246,.24); }
+    .mg-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+
+    #explorer-panel { position:fixed !important; inset:64px 0 0 0 !important; z-index:45 !important; background:rgba(8,10,15,.975) !important; backdrop-filter:blur(28px) !important; }
+    #explorer-panel .max-w-6xl { max-width:1240px !important; }
+    #explorer-panel .sticky { background:rgba(8,10,15,.90) !important; border-color:var(--mg-border) !important; }
+    #explorer-tabs { position:sticky; top:78px; z-index:9; padding:6px; width:max-content; max-width:100%; overflow-x:auto; border:1px solid var(--mg-border); border-radius:13px; background:rgba(17,20,28,.76); backdrop-filter:blur(18px); }
+    #explorer-tabs button { border:0 !important; border-radius:9px !important; }
+    #catalog-results { grid-template-columns:repeat(auto-fill,minmax(310px,1fr)) !important; }
+    #catalog-results > * { border-radius:16px !important; border-color:var(--mg-border) !important; background:rgba(17,20,28,.72) !important; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
+    #catalog-results > button:hover, #catalog-results > div:hover { transform:translateY(-2px); border-color:rgba(139,92,246,.28) !important; background:rgba(21,25,35,.88) !important; }
+    #stats-overview > div, #explorer-stats .bg-gray-900\/60, #timeline-results > div, #path-results, #discoveries-results > div { border-radius:16px !important; border-color:var(--mg-border) !important; background:rgba(17,20,28,.70) !important; }
+
+    #toast { top:78px !important; border-radius:14px !important; box-shadow:0 18px 60px rgba(0,0,0,.38); }
+
+    @media (max-width: 860px) {
+      .mg-topbar { height:58px; padding:0 10px; gap:8px; }
+      .mg-brand-title { display:none; }
+      .mg-nav { display:none; }
+      .mg-search-shell { width:auto; flex:1; }
+      .mg-global-search { height:36px; }
+      main#graph-main { inset:58px 0 0 0; }
+      #explorer-panel { inset:58px 0 0 0 !important; }
+      #sidebar { top:auto; right:6px; left:6px; bottom:6px; width:auto !important; max-height:82vh; border-radius:22px 22px 16px 16px; transform:translateY(calc(100% + 20px)); }
+      body.drawer-open #sidebar { transform:translateY(0); }
+      .mg-track-cover { width:88px; height:88px; }
+      #artist-avatar { width:78px !important; height:78px !important; }
+      #artist-name { font-size:23px !important; }
+      .mg-graph-controls { left:8px; right:8px; bottom:8px; overflow-x:auto; justify-content:flex-start; }
+      .mg-role-btn { flex:none; }
+      #catalog-results { grid-template-columns:1fr !important; }
+    }
+
   </style>
 </head>
-<body class="h-screen w-screen flex flex-col md:flex-row relative">
+<body class="h-screen w-screen relative">
+
+<header class="mg-topbar">
+    <button class="mg-brand" onclick="showGraphView()" type="button" aria-label="Ir para teia">
+      <span class="mg-brand-mark"><i data-lucide="orbit" class="w-5 h-5 text-violet-300"></i></span>
+      <span class="mg-brand-title">Music Graph</span>
+    </button>
+    <nav class="mg-nav" aria-label="Navegação principal">
+      <button id="nav-graph" class="mg-nav-btn active" onclick="showGraphView()">Teia</button>
+      <button id="nav-catalog" class="mg-nav-btn" onclick="openExplorerSection('catalog')">Catálogo</button>
+      <button id="nav-explore" class="mg-nav-btn" onclick="openExplorerSection('stats')">Explorar</button>
+      <button id="nav-discoveries" class="mg-nav-btn" onclick="openExplorerSection('discoveries')">Descobertas</button>
+    </nav>
+    <div class="mg-search-shell">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3 top-[11px] text-gray-500 pointer-events-none"></i>
+      <input id="global-search" class="mg-global-search" type="search" autocomplete="off" placeholder="Buscar artistas, faixas ou álbuns…" oninput="handleGlobalSearch(this.value)" onfocus="handleGlobalSearch(this.value)">
+      <span class="hidden md:block absolute right-3 top-[10px] text-[10px] text-gray-600 border border-gray-800 rounded px-1.5 py-0.5">⌘ K</span>
+      <div id="global-search-results" class="mg-search-results hidden scrollbar-thin"></div>
+    </div>
+    <button class="mg-icon-btn" type="button" onclick="openSettingsDrawer()" title="Ajustes"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
+    <button class="mg-icon-btn" type="button" onclick="openAdminDrawer()" title="Administração"><i data-lucide="user-round" class="w-4 h-4"></i></button>
+  </header>
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-4 right-4 z-50 bg-brand-accent text-white px-4 py-2 rounded-lg shadow-lg hidden transition-opacity duration-300 flex items-center space-x-2 text-sm">
@@ -91,22 +233,21 @@
   </div>
 
   <!-- Sidebar / Controls Panel -->
-  <aside id="sidebar" class="w-full md:w-96 bg-brand-card border-r border-gray-800 flex flex-col h-1/2 md:h-full z-20 shadow-2xl transition-all duration-300">
+  <aside id="sidebar" class="bg-brand-card flex flex-col shadow-2xl transition-all duration-300" aria-label="Painel de detalhes">
     <!-- Header -->
-    <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
-      <div class="flex items-center space-x-2">
-        <i data-lucide="network" class="text-brand-accent w-6 h-6"></i>
-        <h1 class="text-lg font-bold bg-gradient-to-r from-brand-accent via-brand-pink to-brand-cyan bg-clip-text text-transparent">
-          Music Graph
-        </h1>
+    <div class="p-3 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-8 h-8 rounded-xl bg-white/[.035] border border-white/[.06] grid place-items-center"><i data-lucide="panel-right" class="text-brand-accent w-4 h-4"></i></span>
+        <div class="min-w-0"><div class="text-[10px] uppercase tracking-[.18em] text-gray-600">Painel</div><h1 class="text-sm font-semibold text-gray-200 truncate">Detalhes da teia</h1></div>
       </div>
-      <button id="reset-data-btn" title="Restaurar Dados Iniciais" class="text-gray-400 hover:text-red-400 p-1 rounded transition">
-        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button id="reset-data-btn" title="Restaurar Dados Iniciais" class="admin-only text-gray-500 hover:text-red-400 p-2 rounded transition"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+        <button type="button" onclick="closeDetailsDrawer()" title="Fechar" class="mg-drawer-close text-gray-400 hover:text-white p-2 rounded transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="flex border-b border-gray-800 bg-gray-900/30 text-xs font-semibold text-gray-400">
+    <div class="mg-drawer-tabs flex bg-gray-900/30 text-xs font-semibold text-gray-400">
       <button id="tab-info-btn" onclick="switchTab('info')" class="flex-1 py-3 border-b-2 border-brand-accent text-brand-accent flex items-center justify-center space-x-1">
         <i data-lucide="info" class="w-4 h-4"></i>
         <span>Detalhes</span>
@@ -147,8 +288,9 @@
             </div>
           </div>
 
+          <div class="admin-only flex justify-end -mt-2"><button type="button" class="mg-edit-trigger" onclick="toggleAdminEditor('edit-artist-form', this)"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Editar artista</span></button></div>
           <!-- Edit Artist Form -->
-          <form id="edit-artist-form" onsubmit="handleEditArtist(event)" class="admin-only space-y-3 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
+          <form id="edit-artist-form" onsubmit="handleEditArtist(event)" class="admin-only hidden space-y-3 bg-gray-900/60 p-3 rounded-lg border border-gray-800">
             <h3 class="text-xs font-semibold uppercase text-gray-400">Editar Artista Selecionado</h3>
             <div>
               <label class="text-xs text-gray-400 block mb-1">Nome</label>
@@ -175,23 +317,29 @@
 
           <div class="space-y-4">
             <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="performance-count" class="text-lg font-bold text-brand-pink">0</div><div class="text-[10px] text-gray-500 uppercase">Interpretação</div></div>
-              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="production-count" class="text-lg font-bold text-brand-cyan">0</div><div class="text-[10px] text-gray-500 uppercase">Produção</div></div>
-              <div class="bg-gray-900/70 border border-gray-800 rounded p-2"><div id="writing-count" class="text-lg font-bold text-brand-accent">0</div><div class="text-[10px] text-gray-500 uppercase">Letra</div></div>
+              <div class="mg-stat-card"><div id="performance-count" class="text-lg font-bold text-brand-pink">0</div><div class="text-[10px] text-gray-500 uppercase">Interpretação</div></div>
+              <div class="mg-stat-card"><div id="production-count" class="text-lg font-bold text-brand-cyan">0</div><div class="text-[10px] text-gray-500 uppercase">Produção</div></div>
+              <div class="mg-stat-card"><div id="writing-count" class="text-lg font-bold text-brand-accent">0</div><div class="text-[10px] text-gray-500 uppercase">Letra</div></div>
             </div>
-            <div>
+            <div class="flex gap-1 p-1 bg-black/20 border border-white/[.05] rounded-xl overflow-x-auto">
+              <button data-artist-panel="performance" onclick="showArtistPanel('performance')" class="artist-panel-btn active flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg bg-white/[.06] text-white">Faixas</button>
+              <button data-artist-panel="albums" onclick="showArtistPanel('albums')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Álbuns</button>
+              <button data-artist-panel="production" onclick="showArtistPanel('production')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Produção</button>
+              <button data-artist-panel="writing" onclick="showArtistPanel('writing')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Composição</button>
+            </div>
+            <div id="artist-panel-performance" class="artist-subpanel">
               <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Participações / Interpretação</h3>
               <ul id="artist-performance-list" class="space-y-2 text-sm"></ul>
             </div>
-            <div>
+            <div id="artist-panel-albums" class="artist-subpanel hidden">
               <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Álbuns / Projetos</h3>
               <div id="artist-albums-list" class="space-y-2 text-sm"></div>
             </div>
-            <div>
+            <div id="artist-panel-production" class="artist-subpanel hidden">
               <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Músicas produzidas</h3>
               <ul id="artist-production-list" class="space-y-2 text-sm"></ul>
             </div>
-            <div>
+            <div id="artist-panel-writing" class="artist-subpanel hidden">
               <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Letra / Composição</h3>
               <ul id="artist-writing-list" class="space-y-2 text-sm"></ul>
             </div>
@@ -201,15 +349,16 @@
         <!-- Edge / Link Info -->
         <div id="link-details" class="hidden space-y-4">
           <div class="bg-gray-900/60 p-4 rounded-lg border border-gray-800 space-y-3">
-            <div class="flex justify-between items-start gap-2">
-              <div class="min-w-0">
-                <button id="back-to-artist-btn" type="button" onclick="goBackToArtist()" class="hidden mb-2 text-xs text-gray-400 hover:text-white flex items-center gap-1">
-                  <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span>Voltar ao artista</span>
-                </button>
-                <span class="text-xs text-brand-cyan font-semibold">FAIXA / COLABORAÇÃO</span>
+            <button id="back-to-artist-btn" type="button" onclick="goBackToArtist()" class="hidden mb-1 text-xs text-gray-400 hover:text-white flex items-center gap-1">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span>Voltar ao artista</span>
+            </button>
+            <div class="mg-track-hero">
+              <div id="link-cover" class="mg-track-cover"><i data-lucide="disc-3" class="w-8 h-8 text-gray-700"></i></div>
+              <div class="min-w-0 flex-1 pb-1">
+                <div class="flex items-center gap-2 mb-2"><span class="text-[10px] uppercase tracking-[.18em] text-brand-cyan font-semibold">Faixa</span><span id="link-year" class="text-[10px] text-gray-500 font-mono">2023</span></div>
                 <h2 id="link-track-title" class="text-lg font-bold text-white">Nome da Faixa</h2>
+                <div id="link-hero-album" class="text-xs text-gray-500 mt-1 truncate">Álbum / projeto</div>
               </div>
-              <span id="link-year" class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-300 font-mono flex-none">2023</span>
             </div>
 
             <div id="link-primary-warning" class="hidden text-[11px] text-amber-300 bg-amber-950/30 border border-amber-800/40 rounded px-2 py-1.5">Artista principal ainda não definido para esta faixa.</div>
@@ -239,7 +388,8 @@
               </a>
             </div>
 
-            <form id="edit-link-form" onsubmit="handleEditLink(event)" class="admin-only space-y-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
+            <div class="admin-only flex justify-end"><button type="button" class="mg-edit-trigger" onclick="toggleAdminEditor('edit-link-form', this)"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Editar faixa</span></button></div>
+            <form id="edit-link-form" onsubmit="handleEditLink(event)" class="admin-only hidden space-y-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
               <h3 class="text-xs font-semibold uppercase text-gray-400">Editar colaboração selecionada</h3>
               <div class="space-y-2 bg-gray-900/70 border border-gray-800 rounded p-2.5">
                 <label class="text-xs text-gray-400 block">Buscar dados no Spotify</label>
@@ -504,17 +654,10 @@
   </aside>
 
   <!-- Main Graph Canvas -->
-  <main class="flex-1 relative h-1/2 md:h-full bg-brand-dark">
-    <div class="absolute top-4 left-4 z-10 flex flex-wrap gap-2 max-w-xl">
-      <div class="relative">
-        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-        <input type="text" id="search-input" placeholder="Buscar artista..." onkeyup="handleSearch()" class="bg-gray-900/80 backdrop-blur border border-gray-700 text-white text-sm rounded-full pl-9 pr-4 py-2 w-48 md:w-64 focus:outline-none focus:border-brand-accent shadow-lg">
-      </div>
-      <select id="genre-filter" onchange="handleFilter()" class="bg-gray-900/80 backdrop-blur border border-gray-700 text-white text-sm rounded-full px-3 py-2 focus:outline-none focus:border-brand-accent shadow-lg">
-      </select>
-      <button type="button" onclick="openExplorer()" class="bg-brand-accent/90 hover:bg-brand-accent backdrop-blur border border-purple-400/30 text-white text-sm rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
-        <i data-lucide="compass" class="w-4 h-4"></i><span>Explorar</span>
-      </button>
+  <main id="graph-main" class="relative bg-brand-dark">
+    <div class="absolute top-4 left-4 z-10 flex items-center gap-2">
+      <select id="genre-filter" onchange="handleFilter()" class="bg-[#0d1017]/80 backdrop-blur-xl border border-white/[.08] text-gray-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-brand-accent shadow-lg"></select>
+      <div class="hidden"><input type="text" id="search-input" onkeyup="handleSearch()"></div>
     </div>
 
     <div id="explorer-panel" class="hidden absolute inset-0 z-30 bg-brand-dark/98 backdrop-blur-sm overflow-y-auto scrollbar-thin">
@@ -568,6 +711,13 @@
       </div>
     </div>
 
+    <div class="mg-graph-controls" aria-label="Tipo de conexão">
+      <span class="hidden md:inline px-2 text-[10px] uppercase tracking-[.15em] text-gray-600">Mostrar</span>
+      <button id="role-mode-performance" class="mg-role-btn active" onclick="setGraphRoleMode('performance')"><span class="mg-dot text-pink-400"></span>Interpretação</button>
+      <button id="role-mode-production" class="mg-role-btn" onclick="setGraphRoleMode('production')"><span class="mg-dot text-cyan-400"></span>Produção</button>
+      <button id="role-mode-writing" class="mg-role-btn" onclick="setGraphRoleMode('writing')"><span class="mg-dot text-violet-400"></span>Composição</button>
+    </div>
+
     <svg id="graph-svg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
 
     <div class="absolute bottom-4 right-4 z-10 flex flex-col space-y-1 bg-gray-900/80 border border-gray-700 rounded-lg p-1 shadow-lg backdrop-blur">
@@ -578,6 +728,73 @@
   </main>
 
   <script>
+    function openDetailsDrawer() { document.body.classList.add('drawer-open'); }
+    function closeDetailsDrawer() { document.body.classList.remove('drawer-open'); }
+    function toggleAdminEditor(id, button) {
+      const el = document.getElementById(id); if (!el) return;
+      const nowHidden = !el.classList.contains('hidden');
+      el.classList.toggle('hidden', nowHidden);
+      if (button) button.querySelector('span').textContent = nowHidden ? (id.includes('artist') ? 'Editar artista' : 'Editar faixa') : 'Fechar edição';
+    }
+    function showArtistPanel(panel='performance') {
+      document.querySelectorAll('.artist-subpanel').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`artist-panel-${panel}`)?.classList.remove('hidden');
+      document.querySelectorAll('.artist-panel-btn').forEach(btn => {
+        const active = btn.dataset.artistPanel === panel;
+        btn.classList.toggle('active', active); btn.classList.toggle('bg-white/[.06]', active); btn.classList.toggle('text-white', active); btn.classList.toggle('text-gray-500', !active);
+      });
+    }
+    function openSettingsDrawer() { openDetailsDrawer(); switchTab('settings'); }
+    function openAdminDrawer() { openDetailsDrawer(); switchTab('settings'); setTimeout(() => document.getElementById('admin-password-input')?.focus(), 120); }
+    function setTopNav(id) {
+      document.querySelectorAll('.mg-nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(id)?.classList.add('active');
+    }
+    function showGraphView() { closeExplorer(); setTopNav('nav-graph'); }
+    function openExplorerSection(tab) { closeDetailsDrawer(); openExplorer(); switchExplorerTab(tab); setTopNav(tab === 'catalog' ? 'nav-catalog' : tab === 'discoveries' ? 'nav-discoveries' : 'nav-explore'); }
+    function roleIdsForCollab(collab, role='performance') {
+      const performers = (collab.artists || []).map(a => typeof a === 'object' ? a.id : a);
+      if (role === 'performance') return performers;
+      const credited = Object.entries(collab.credits || {}).filter(([,roles]) => (roles || []).includes(role)).map(([id]) => id);
+      return [...new Set([...credited, ...performers])];
+    }
+    function graphPairsForCollab(collab, role='performance') {
+      const performers = (collab.artists || []).map(a => typeof a === 'object' ? a.id : a);
+      if (role === 'performance') {
+        const pairs=[]; for(let i=0;i<performers.length;i++) for(let j=i+1;j<performers.length;j++) pairs.push([performers[i],performers[j]]); return pairs;
+      }
+      const credited = Object.entries(collab.credits || {}).filter(([,roles]) => (roles || []).includes(role)).map(([id]) => id);
+      const pairs=[]; credited.forEach(source => performers.forEach(target => { if(source!==target) pairs.push([source,target]); }));
+      return [...new Map(pairs.map(p=>[[...p].sort().join('::'),p])).values()];
+    }
+    function setGraphRoleMode(role) {
+      graphRoleMode = role;
+      document.querySelectorAll('[id^="role-mode-"]').forEach(b => b.classList.remove('active'));
+      document.getElementById(`role-mode-${role}`)?.classList.add('active');
+      updateGraph();
+      if (selectedNode) selectNode(selectedNode);
+    }
+    function handleGlobalSearch(value) {
+      const out = document.getElementById('global-search-results'); if (!out) return;
+      const q = (value || '').trim().toLowerCase();
+      if (!q) { out.classList.add('hidden'); out.innerHTML=''; return; }
+      const artists = (graphData?.nodes || []).filter(n => `${n.name} ${n.genre}`.toLowerCase().includes(q)).slice(0,5);
+      const tracks = (graphData?.links || []).filter(l => `${l.track} ${l.album} ${(l.creditArtists||[]).map(id=>artistNameById(id)).join(' ')}`.toLowerCase().includes(q)).slice(0,6);
+      const albums = [...new Set((graphData?.links || []).map(l => l.album).filter(Boolean))].filter(a => a.toLowerCase().includes(q)).slice(0,4);
+      const rows = [];
+      if (artists.length) rows.push(`<div class="px-2 pt-2 pb-1 text-[9px] uppercase tracking-[.16em] text-gray-600">Artistas</div>` + artists.map(n => `<button class="mg-search-item" onclick="globalOpenArtist('${n.id}')"><div class="w-9 h-9 rounded-full border border-white/[.07] bg-gray-800 bg-cover bg-center flex-none" style="${n.image?`background-image:url('${n.image}')`:''}">${n.image?'':`<span class='h-full grid place-items-center text-xs font-bold'>${escapeHtml(n.name[0]||'?')}</span>`}</div><div class="min-w-0"><div class="text-sm text-gray-100 truncate">${escapeHtml(n.name)}</div><div class="text-[10px] text-gray-500">${escapeHtml(n.genre||'')}</div></div></button>`).join(''));
+      if (tracks.length) rows.push(`<div class="px-2 pt-3 pb-1 text-[9px] uppercase tracking-[.16em] text-gray-600">Faixas</div>` + tracks.map(l => `<button class="mg-search-item" onclick="globalOpenTrack(${Number(l.dbId)})"><div class="w-9 h-9 rounded-lg border border-white/[.07] bg-gray-800 bg-cover bg-center flex-none grid place-items-center" style="${l.albumImage?`background-image:url('${l.albumImage}')`:''}">${l.albumImage?'':`<i data-lucide='music-2' class='w-4 h-4 text-gray-600'></i>`}</div><div class="min-w-0"><div class="text-sm text-gray-100 truncate">${escapeHtml(l.track||'Sem título')}</div><div class="text-[10px] text-gray-500 truncate">${escapeHtml(l.album||'Single')} ${l.year?'• '+l.year:''}</div></div></button>`).join(''));
+      if (albums.length) rows.push(`<div class="px-2 pt-3 pb-1 text-[9px] uppercase tracking-[.16em] text-gray-600">Álbuns</div>` + albums.map(a => `<button class="mg-search-item" onclick="globalOpenAlbum('${encodeURIComponent(a)}')"><div class="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-400/10 grid place-items-center"><i data-lucide="disc-3" class="w-4 h-4 text-violet-300"></i></div><div class="text-sm text-gray-200 truncate">${escapeHtml(a)}</div></button>`).join(''));
+      out.innerHTML = rows.join('') || '<div class="p-4 text-xs text-gray-500">Nada encontrado.</div>';
+      out.classList.remove('hidden'); lucide.createIcons();
+    }
+    function clearGlobalSearch() { const i=document.getElementById('global-search'); const o=document.getElementById('global-search-results'); if(i)i.value=''; if(o){o.classList.add('hidden');o.innerHTML='';} }
+    function globalOpenArtist(id){ clearGlobalSearch(); showGraphView(); const n=graphData.nodes.find(x=>x.id===id); if(n)selectNode(n); }
+    function globalOpenTrack(id){ clearGlobalSearch(); showGraphView(); const l=graphData.links.find(x=>Number(x.dbId)===Number(id)); if(l)selectLink(l); }
+    function globalOpenAlbum(encoded){ const name=decodeURIComponent(encoded); clearGlobalSearch(); openExplorerSection('catalog'); const type=document.getElementById('catalog-type'); const search=document.getElementById('catalog-search'); if(type)type.value='albums'; if(search)search.value=name; renderCatalog(); }
+    document.addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k') { e.preventDefault(); document.getElementById('global-search')?.focus(); } if (e.key==='Escape') { clearGlobalSearch(); closeDetailsDrawer(); } });
+    document.addEventListener('click', e => { const shell=e.target.closest?.('.mg-search-shell'); if(!shell) document.getElementById('global-search-results')?.classList.add('hidden'); });
+
     // --- SUPABASE (fonte online da teia) ---
     const SUPABASE_URL = 'https://rntxymqxbgaphlfinpav.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_lV4PJKZaNiB2eJuh_sJIyQ_-ExFwf1a';
@@ -1147,6 +1364,7 @@
     let selectedLink = null;
     let linkBackArtistId = null;
     let d3Edges = [];
+    let graphRoleMode = 'performance';
     let supportsAlbumField = true;
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -1260,16 +1478,9 @@
 
       d3Edges = [];
       graphData.links.forEach(collab => {
-        const ids = collab.artists.map(a => typeof a === 'object' ? a.id : a);
-        for (let i = 0; i < ids.length; i++) {
-          for (let j = i + 1; j < ids.length; j++) {
-            d3Edges.push({
-              source: ids[i],
-              target: ids[j],
-              parentCollab: collab
-            });
-          }
-        }
+        graphPairsForCollab(collab, graphRoleMode).forEach(([source, target]) => {
+          d3Edges.push({ source, target, parentCollab: collab });
+        });
       });
 
       // Update Links
@@ -1285,11 +1496,15 @@
       const linkEnter = linkSelection.enter()
         .append("line")
         .attr("class", "link")
-        .attr("stroke", "#4B5563")
-        .attr("stroke-width", 2)
+        .attr("stroke", () => graphRoleMode === 'production' ? "#22D3EE" : graphRoleMode === 'writing' ? "#8B5CF6" : "#64748B")
+        .attr("stroke-dasharray", () => graphRoleMode === 'production' ? "7 6" : graphRoleMode === 'writing' ? "2 6" : null)
+        .attr("stroke-width", 1.7)
         .on("click", (event, d) => selectLink(d.parentCollab));
 
-      linkSelection = linkEnter.merge(linkSelection);
+      linkSelection = linkEnter.merge(linkSelection)
+        .attr("stroke", () => graphRoleMode === 'production' ? "#22D3EE" : graphRoleMode === 'writing' ? "#8B5CF6" : "#64748B")
+        .attr("stroke-dasharray", () => graphRoleMode === 'production' ? "7 6" : graphRoleMode === 'writing' ? "2 6" : null)
+        .attr("stroke-width", 1.7);
 
       // Update Nodes
       nodeSelection = g.selectAll(".node-group")
@@ -1376,7 +1591,7 @@
 
       const connectedNodeIds = new Set();
       graphData.links.forEach(l => {
-        const ids = l.artists.map(a => typeof a === 'object' ? a.id : a);
+        const ids = roleIdsForCollab(l, graphRoleMode);
         if (ids.includes(node.id)) {
           ids.forEach(id => { if (id !== node.id) connectedNodeIds.add(id); });
         }
@@ -1387,11 +1602,11 @@
 
       linkSelection
         .attr("stroke", d => {
-          const ids = d.parentCollab.artists.map(a => typeof a === 'object' ? a.id : a);
+          const ids = roleIdsForCollab(d.parentCollab, graphRoleMode);
           return ids.includes(node.id) ? "#EC4899" : "#374151";
         })
         .attr("stroke-width", d => {
-          const ids = d.parentCollab.artists.map(a => typeof a === 'object' ? a.id : a);
+          const ids = roleIdsForCollab(d.parentCollab, graphRoleMode);
           return ids.includes(node.id) ? 3 : 1;
         });
 
@@ -1399,6 +1614,8 @@
       document.getElementById('link-details').classList.add('hidden');
       document.getElementById('artist-details').classList.remove('hidden');
 
+      document.getElementById('edit-artist-form')?.classList.add('hidden');
+      showArtistPanel('performance');
       document.getElementById('artist-name').innerText = node.name;
       document.getElementById('artist-genre').innerText = node.genre;
       
@@ -1443,14 +1660,17 @@
             .map(id => graphData.nodes.find(n => n.id === id)?.name || id)
             .join(' & ');
           const li = document.createElement('li');
-          li.className = 'bg-gray-900/80 p-2 rounded flex justify-between items-center border border-gray-800 cursor-pointer hover:border-gray-600 transition';
+          li.className = 'bg-gray-900/80 p-2.5 rounded flex justify-between items-center border border-gray-800 cursor-pointer hover:border-gray-600 transition';
           li.onclick = () => selectLink(c, node.id);
           li.innerHTML = `
-            <div class="min-w-0">
-              <div class="font-semibold text-gray-200 truncate">${c.track || 'Colaboração'}</div>
-              <div class="text-xs text-gray-500">${partnerNames ? 'com ' + partnerNames + ' • ' : ''}${c.album ? c.album + ' • ' : ''}${c.year || 'N/A'}</div>
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              ${c.albumImage ? `<img src="${c.albumImage}" class="w-10 h-10 rounded-lg object-cover border border-white/[.06] flex-none">` : `<div class="w-10 h-10 rounded-lg bg-white/[.025] border border-white/[.06] grid place-items-center flex-none"><i data-lucide="music-2" class="w-4 h-4 ${accentClass}"></i></div>`}
+              <div class="min-w-0">
+                <div class="font-semibold text-gray-200 truncate">${c.track || 'Colaboração'}</div>
+                <div class="text-xs text-gray-500 truncate">${partnerNames ? 'com ' + partnerNames + ' • ' : ''}${c.album ? c.album + ' • ' : ''}${c.year || 'N/A'}</div>
+              </div>
             </div>
-            <i data-lucide="music-2" class="w-4 h-4 ${accentClass}"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-700"></i>
           `;
           list.appendChild(li);
         });
@@ -1491,6 +1711,7 @@
         });
       }
       lucide.createIcons();
+      openDetailsDrawer();
 
       switchTab('info');
     }
@@ -1515,6 +1736,7 @@
         backBtn.classList.add('hidden');
       }
 
+      document.getElementById('edit-link-form')?.classList.add('hidden');
       const trackTitle = link.track || "Colaboração";
       document.getElementById('link-track-title').innerText = trackTitle;
       document.getElementById('link-year').innerText = link.year || "N/A";
@@ -2319,6 +2541,7 @@
     }
 
     function closeExplorer() {
+      setTopNav('nav-graph');
       document.getElementById('explorer-panel').classList.add('hidden');
     }
 
