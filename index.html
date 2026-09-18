@@ -630,6 +630,9 @@
           <button id="spotify-refresh-btn" type="button" onclick="enrichExistingArtists()" class="w-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-wait text-gray-200 border border-gray-700 text-xs py-2 rounded transition">
             Atualizar fotos dos artistas existentes
           </button>
+          <button id="spotify-track-refresh-btn" type="button" onclick="enrichExistingTracks()" class="w-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-wait text-gray-200 border border-gray-700 text-xs py-2 rounded transition">
+            Atualizar capas e dados das faixas existentes
+          </button>
           <p class="text-[10px] leading-relaxed text-gray-500">A conexão usa OAuth PKCE; nenhuma chave secreta fica exposta no navegador.</p>
         </div>
 
@@ -1133,6 +1136,98 @@
       }
     }
 
+    async function enrichExistingTracks() {
+      if (!await requireAdmin()) return;
+      const token = await getSpotifyToken();
+      if (!token) {
+        await startSpotifyLogin('refresh-existing-tracks');
+        return;
+      }
+
+      const targets = graphData.links.filter(l => !l.albumImage || !l.spotifyTrackId || !l.spotifyUrl || !l.releaseDate);
+      if (!targets.length) {
+        showToast('Todas as faixas já possuem dados do Spotify.');
+        return;
+      }
+
+      const btn = document.getElementById('spotify-track-refresh-btn');
+      if (btn) btn.disabled = true;
+      let updated = 0;
+      let skipped = 0;
+
+      try {
+        for (let i = 0; i < targets.length; i++) {
+          const link = targets[i];
+          const performerIds = (link.artists || []).map(a => typeof a === 'object' ? a.id : a);
+          const names = performerIds.map(id => graphData.nodes.find(n => n.id === id)?.name).filter(Boolean);
+          const query = `${link.track || ''} ${names.slice(0, 2).join(' ')}`.trim();
+          if (!query) { skipped++; continue; }
+
+          showToast(`Spotify: ${i + 1}/${targets.length} — ${link.track || 'faixa'}`);
+          let items = [];
+          try {
+            items = await fetchTracksFromSpotify(query) || [];
+          } catch (error) {
+            console.warn('Falha ao buscar faixa no Spotify:', link.track, error);
+            skipped++;
+            continue;
+          }
+          if (!items.length) { skipped++; continue; }
+
+          const normalize = value => normalizeArtistName(value || '');
+          const wantedTrack = normalize(link.track || '');
+          const expectedNames = names.map(normalize).filter(Boolean);
+          const scored = items.map(item => {
+            const itemTrack = normalize(item.name || '');
+            const itemArtists = (item.artists || []).map(a => normalize(a.name));
+            let score = 0;
+            if (wantedTrack && itemTrack === wantedTrack) score += 8;
+            else if (wantedTrack && (itemTrack.includes(wantedTrack) || wantedTrack.includes(itemTrack))) score += 4;
+            score += expectedNames.filter(name => itemArtists.includes(name)).length * 3;
+            if (link.album && normalize(item.album?.name || '') === normalize(link.album)) score += 2;
+            return { item, score };
+          }).sort((a,b) => b.score - a.score);
+
+          const best = scored[0];
+          if (!best || best.score < 4) { skipped++; continue; }
+          const item = best.item;
+          const releaseDate = item.album?.release_date || null;
+          const payload = {
+            spotify_track_id: item.id || null,
+            spotify_url: item.external_urls?.spotify || null,
+            album_image_url: item.album?.images?.[0]?.url || null,
+            release_date: releaseDate,
+            updated_at: new Date().toISOString()
+          };
+          if (supportsAlbumField && !link.album && item.album?.name) payload.album = item.album.name;
+          if (!link.year && releaseDate) payload.year = parseInt(releaseDate.slice(0,4), 10) || null;
+
+          const { error } = await db.from('collaborations').update(payload).eq('id', link.dbId);
+          if (error) {
+            console.warn('Erro ao atualizar faixa:', link.track, error);
+            skipped++;
+            continue;
+          }
+          updated++;
+          await new Promise(resolve => setTimeout(resolve, 140));
+        }
+
+        await loadDataFromSupabase();
+        updateGraph();
+        if (selectedNode) {
+          const refreshedNode = graphData.nodes.find(n => n.id === selectedNode.id);
+          if (refreshedNode) selectNode(refreshedNode);
+        } else if (selectedLink) {
+          const refreshedLink = graphData.links.find(l => l.dbId === selectedLink.dbId);
+          if (refreshedLink) selectLink(refreshedLink, linkBackArtistId);
+        }
+        renderExplorer?.();
+        showToast(`${updated} faixa(s) atualizada(s) com capa/dados do Spotify${skipped ? ` • ${skipped} não identificada(s)` : ''}.`);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     async function completePendingSpotifyAction() {
       let pending = null;
       try {
@@ -1143,6 +1238,8 @@
 
       if (pending.action === 'refresh-existing') {
         await enrichExistingArtists();
+      } else if (pending.action === 'refresh-existing-tracks') {
+        await enrichExistingTracks();
       } else if (pending.action === 'add-artist' && pending.payload) {
         await addArtistFromValues(pending.payload.inputName, pending.payload.fallbackGenre);
       } else if (pending.action === 'spotify-track-search' && pending.payload) {
@@ -1741,6 +1838,20 @@
       document.getElementById('link-track-title').innerText = trackTitle;
       document.getElementById('link-year').innerText = link.year || "N/A";
       document.getElementById('link-album').innerText = link.album || 'Single / sem álbum informado';
+      const heroAlbum = document.getElementById('link-hero-album');
+      if (heroAlbum) heroAlbum.innerText = link.album || 'Single / sem álbum informado';
+      const coverEl = document.getElementById('link-cover');
+      if (coverEl) {
+        if (link.albumImage) {
+          coverEl.style.backgroundImage = `url('${link.albumImage}')`;
+          coverEl.style.backgroundSize = 'cover';
+          coverEl.style.backgroundPosition = 'center';
+          coverEl.innerHTML = '';
+        } else {
+          coverEl.style.backgroundImage = 'none';
+          coverEl.innerHTML = '<i data-lucide="disc-3" class="w-8 h-8 text-gray-700"></i>';
+        }
+      }
       document.getElementById('edit-link-track').value = link.track || '';
       document.getElementById('edit-link-album').value = link.album || '';
       document.getElementById('edit-link-year').value = link.year || '';
