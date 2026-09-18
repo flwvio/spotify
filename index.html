@@ -82,13 +82,13 @@
     body:not(.is-admin) .admin-only { display: none !important; }
 
     :root {
-      --mg-bg: #080A0F;
-      --mg-surface: #10131A;
-      --mg-card: #151923;
-      --mg-card-2: #1A1F2B;
-      --mg-border: rgba(148, 163, 184, 0.14);
-      --mg-text: #F6F7FB;
-      --mg-muted: #8D96AA;
+      --mg-bg: #0b1328;
+      --mg-surface: rgba(17, 24, 39, 0.52);
+      --mg-card: rgba(20, 27, 45, 0.58);
+      --mg-card-2: rgba(30, 41, 59, 0.50);
+      --mg-border: rgba(191, 219, 254, 0.14);
+      --mg-text: #F8FAFF;
+      --mg-muted: #AAB5CE;
       --mg-violet: #8B5CF6;
       --mg-pink: #EC4899;
       --mg-cyan: #22D3EE;
@@ -97,16 +97,42 @@
     html, body { background: var(--mg-bg); }
     body {
       background:
-        radial-gradient(circle at 30% 10%, rgba(139,92,246,.10), transparent 28%),
-        radial-gradient(circle at 80% 80%, rgba(34,211,238,.055), transparent 26%),
-        var(--mg-bg);
+        radial-gradient(circle at 16% 12%, rgba(96,165,250,.34), transparent 28%),
+        radial-gradient(circle at 78% 18%, rgba(139,92,246,.34), transparent 26%),
+        radial-gradient(circle at 50% 88%, rgba(34,211,238,.16), transparent 22%),
+        linear-gradient(180deg, #101a37 0%, #0b1226 38%, #09101f 100%);
       color: var(--mg-text);
       overflow: hidden;
+    }
+    body::before {
+      content:'';
+      position:fixed;
+      inset:-8% -8% auto auto;
+      width:42vw;
+      height:42vw;
+      background:radial-gradient(circle, rgba(129,140,248,.26), transparent 60%);
+      filter:blur(42px);
+      pointer-events:none;
+      z-index:0;
+      opacity:.85;
+    }
+    body::after {
+      content:'';
+      position:fixed;
+      left:-10vw;
+      bottom:-10vw;
+      width:42vw;
+      height:42vw;
+      background:radial-gradient(circle, rgba(34,211,238,.18), transparent 62%);
+      filter:blur(48px);
+      pointer-events:none;
+      z-index:0;
+      opacity:.9;
     }
     .mg-topbar {
       position: fixed; inset: 0 0 auto 0; height: 64px; z-index: 60;
       display: flex; align-items: center; gap: 18px; padding: 0 18px;
-      background: rgba(8,10,15,.82); backdrop-filter: blur(22px);
+      background: linear-gradient(180deg, rgba(22,30,54,.48), rgba(13,18,34,.34)); backdrop-filter: blur(28px) saturate(160%);
       border-bottom: 1px solid var(--mg-border);
     }
     .mg-brand { display:flex; align-items:center; gap:10px; min-width:max-content; }
@@ -119,7 +145,7 @@
     .mg-search-shell { position:relative; margin-left:auto; width:min(360px,32vw); }
     .mg-global-search { width:100%; height:38px; border-radius:12px; padding:0 38px 0 38px; background:rgba(21,25,35,.78); border:1px solid var(--mg-border); color:white; outline:none; font-size:13px; transition:.2s; }
     .mg-global-search:focus { border-color:rgba(139,92,246,.55); box-shadow:0 0 0 3px rgba(139,92,246,.09); }
-    .mg-search-results { position:absolute; top:46px; right:0; width:min(440px,92vw); max-height:62vh; overflow:auto; border-radius:16px; padding:7px; background:rgba(15,18,26,.97); border:1px solid var(--mg-border); box-shadow:0 24px 80px rgba(0,0,0,.48); backdrop-filter:blur(24px); }
+    .mg-search-results { position:absolute; top:46px; right:0; width:min(440px,92vw); max-height:62vh; overflow:auto; border-radius:16px; padding:7px; background:linear-gradient(180deg, rgba(20,28,48,.86), rgba(10,14,28,.90)); backdrop-filter:blur(28px) saturate(170%); border:1px solid var(--mg-border); box-shadow:0 24px 80px rgba(0,0,0,.48); backdrop-filter:blur(24px); }
     .mg-search-item { width:100%; display:flex; align-items:center; gap:10px; padding:9px; border-radius:11px; text-align:left; transition:.15s; }
     .mg-search-item:hover { background:rgba(255,255,255,.055); }
     .mg-icon-btn { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; color:#A9B1C3; background:rgba(21,25,35,.74); border:1px solid var(--mg-border); transition:.18s; }
@@ -129,7 +155,7 @@
       position: fixed !important; top:76px; right:12px; bottom:12px; left:auto;
       width:min(430px, calc(100vw - 24px)) !important; height:auto !important;
       z-index:55; border:1px solid var(--mg-border) !important; border-radius:22px;
-      background:rgba(16,19,26,.94) !important; backdrop-filter:blur(26px);
+      background:linear-gradient(180deg, rgba(18,24,44,.62), rgba(12,18,34,.56)) !important; backdrop-filter:blur(30px) saturate(160%);
       box-shadow:0 28px 90px rgba(0,0,0,.48); overflow:hidden;
       transform:translateX(calc(100% + 30px)); opacity:0; pointer-events:none;
       transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
@@ -138,8 +164,8 @@
     #sidebar > .p-4.border-b { background:transparent !important; border-color:var(--mg-border) !important; }
     #sidebar > .p-4.border-b h1 { color:white; background:none; -webkit-text-fill-color:initial; font-size:14px; }
     #sidebar .border-gray-800, #sidebar .border-gray-700 { border-color:var(--mg-border) !important; }
-    #sidebar .bg-gray-900\/50, #sidebar .bg-gray-900\/40, #sidebar .bg-gray-900\/60, #sidebar .bg-gray-900\/70, #sidebar .bg-gray-900\/80 { background:rgba(17,20,28,.72) !important; }
-    #sidebar input, #sidebar select, #sidebar textarea { border-radius:11px !important; background:#0E1118 !important; border-color:rgba(148,163,184,.16) !important; }
+    #sidebar .bg-gray-900\/50, #sidebar .bg-gray-900\/40, #sidebar .bg-gray-900\/60, #sidebar .bg-gray-900\/70, #sidebar .bg-gray-900\/80 { background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important; backdrop-filter:blur(22px) saturate(150%) !important; }
+    #sidebar input, #sidebar select, #sidebar textarea { border-radius:11px !important; background:rgba(7,11,22,.52) !important; backdrop-filter:blur(16px) !important; border-color:rgba(148,163,184,.16) !important; }
     #sidebar button { border-radius:10px; }
     .mg-drawer-close { margin-left:auto; }
     .mg-drawer-tabs { padding:6px; margin:8px 10px 0; border:1px solid var(--mg-border) !important; border-radius:13px; background:rgba(8,10,15,.5) !important; gap:3px; }
@@ -151,13 +177,13 @@
     #artist-genre { margin-top:7px; background:rgba(139,92,246,.10) !important; border-color:rgba(139,92,246,.22) !important; color:#C4B5FD !important; }
     .mg-edit-trigger { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#AAB2C3; padding:7px 10px; border:1px solid var(--mg-border); border-radius:10px; background:rgba(255,255,255,.025); }
     .mg-stat-card { background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015)); border:1px solid var(--mg-border); border-radius:14px; padding:11px; }
-    #artist-performance-list li, #artist-production-list li, #artist-writing-list li, #artist-albums-list > div { border-radius:13px !important; background:rgba(17,20,28,.72) !important; border-color:var(--mg-border) !important; }
+    #artist-performance-list li, #artist-production-list li, #artist-writing-list li, #artist-albums-list > div { border-radius:13px !important; background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important; backdrop-filter:blur(22px) saturate(150%) !important; border-color:var(--mg-border) !important; }
 
     #link-details > div { background:transparent !important; border:0 !important; padding:2px !important; }
     .mg-track-hero { display:flex; gap:14px; align-items:flex-end; padding:8px 2px 14px; }
     .mg-track-cover { width:112px; height:112px; border-radius:16px; flex:none; background:#151923 center/cover no-repeat; border:1px solid var(--mg-border); box-shadow:0 18px 46px rgba(0,0,0,.35); display:grid; place-items:center; overflow:hidden; }
     #link-track-title { font-size:25px !important; letter-spacing:-.03em; line-height:1.08; }
-    #link-artists-container > div { background:rgba(17,20,28,.72) !important; border:1px solid var(--mg-border); border-radius:13px !important; }
+    #link-artists-container > div { background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important; backdrop-filter:blur(22px) saturate(150%) !important; border:1px solid var(--mg-border); border-radius:13px !important; }
 
     main#graph-main { position:fixed; inset:64px 0 0 0; height:auto !important; width:auto !important; background:transparent !important; }
     #graph-svg { background:transparent; }
@@ -165,24 +191,26 @@
     .node-label { font-size:11px; fill:#D9DEEA; text-shadow:0 2px 8px rgba(0,0,0,.95); }
     .link { stroke-opacity:.28; }
     .link:hover { stroke-opacity:.92; }
-    .mg-graph-controls { position:absolute; left:18px; bottom:18px; z-index:12; display:flex; align-items:center; gap:6px; padding:6px; border:1px solid var(--mg-border); border-radius:14px; background:rgba(13,16,23,.78); backdrop-filter:blur(18px); box-shadow:0 12px 40px rgba(0,0,0,.24); }
+    .mg-graph-controls { position:absolute; left:18px; bottom:18px; z-index:12; display:flex; align-items:center; gap:6px; padding:6px; border:1px solid var(--mg-border); border-radius:14px; background:linear-gradient(180deg, rgba(27,38,67,.48), rgba(12,17,31,.56)); backdrop-filter:blur(26px) saturate(160%); backdrop-filter:blur(18px); box-shadow:0 12px 40px rgba(0,0,0,.24); }
     .mg-role-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:9px; font-size:11px; color:#8E98AB; transition:.18s; }
     .mg-role-btn:hover { color:#E8EBF2; background:rgba(255,255,255,.045); }
     .mg-role-btn.active { color:white; background:rgba(139,92,246,.16); box-shadow:inset 0 0 0 1px rgba(139,92,246,.24); }
     .mg-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
 
-    #explorer-panel { position:fixed !important; inset:64px 0 0 0 !important; z-index:45 !important; background:rgba(8,10,15,.975) !important; backdrop-filter:blur(28px) !important; }
+    #explorer-panel { position:fixed !important; inset:64px 0 0 0 !important; z-index:45 !important; background:linear-gradient(180deg, rgba(13,19,35,.82), rgba(8,12,24,.88)) !important; backdrop-filter:blur(34px) saturate(160%) !important; }
     #explorer-panel .max-w-6xl { max-width:1240px !important; }
     #explorer-panel .sticky { background:rgba(8,10,15,.90) !important; border-color:var(--mg-border) !important; }
-    #explorer-tabs { position:sticky; top:78px; z-index:9; padding:6px; width:max-content; max-width:100%; overflow-x:auto; border:1px solid var(--mg-border); border-radius:13px; background:rgba(17,20,28,.76); backdrop-filter:blur(18px); }
+    #explorer-tabs { position:sticky; top:78px; z-index:9; padding:6px; width:max-content; max-width:100%; overflow-x:auto; border:1px solid var(--mg-border); border-radius:13px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); backdrop-filter:blur(24px) saturate(160%); }
     #explorer-tabs button { border:0 !important; border-radius:9px !important; }
     #catalog-results { grid-template-columns:repeat(auto-fill,minmax(310px,1fr)) !important; }
-    #catalog-results > * { border-radius:16px !important; border-color:var(--mg-border) !important; background:rgba(17,20,28,.72) !important; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
+    #catalog-results > * { border-radius:16px !important; border-color:var(--mg-border) !important; background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04)) !important; backdrop-filter:blur(22px) saturate(150%) !important; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
     #catalog-results > button:hover, #catalog-results > div:hover { transform:translateY(-2px); border-color:rgba(139,92,246,.28) !important; background:rgba(21,25,35,.88) !important; }
-    #stats-overview > div, #explorer-stats .bg-gray-900\/60, #timeline-results > div, #path-results, #discoveries-results > div { border-radius:16px !important; border-color:var(--mg-border) !important; background:rgba(17,20,28,.70) !important; }
+    #stats-overview > div, #explorer-stats .bg-gray-900\/60, #timeline-results > div, #path-results, #discoveries-results > div { border-radius:16px !important; border-color:var(--mg-border) !important; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important; backdrop-filter:blur(24px) saturate(160%) !important; }
 
     #toast { top:78px !important; border-radius:14px !important; box-shadow:0 18px 60px rgba(0,0,0,.38); }
 
+    .mg-liquid-panel { background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important; border:1px solid rgba(255,255,255,.12) !important; box-shadow:0 18px 52px rgba(11,17,34,.18), inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter:blur(22px) saturate(160%); }
+    .participant-pill { background:linear-gradient(180deg, rgba(34,211,238,.16), rgba(139,92,246,.14)); border:1px solid rgba(103,232,249,.18); }
     @media (max-width: 860px) {
       .mg-topbar { height:58px; padding:0 10px; gap:8px; }
       .mg-brand-title { display:none; }
@@ -526,6 +554,16 @@
               <label class="flex items-center gap-1"><input id="link-artist3-production" type="checkbox"> Produção</label>
               <label class="flex items-center gap-1"><input id="link-artist3-writing" type="checkbox"> Letra/Composição</label>
             </div>
+          </div>
+          <div class="space-y-2 pt-2 border-t border-gray-800">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <label class="text-xs text-gray-300 block">Mais participantes (Opcional)</label>
+                <p class="text-[10px] text-gray-500">Adicione quantos artistas quiser para colaborações conjuntas com muitos nomes.</p>
+              </div>
+              <button type="button" onclick="addPerformerRow()" class="shrink-0 bg-brand-cyan/20 hover:bg-brand-cyan border border-cyan-500/30 text-cyan-300 text-[11px] px-2 py-1.5 rounded">+ Participante</button>
+            </div>
+            <div id="additional-performers-container" class="space-y-2"></div>
           </div>
           <div class="space-y-2 pt-2 border-t border-gray-800">
             <div class="flex items-center justify-between gap-2">
@@ -2271,7 +2309,80 @@
       }
     }
 
+    let performerRowCounter = 3;
     let extraCreditRowCounter = 0;
+
+    function performerRowTemplate(index) {
+      return `
+        <div class="additional-performer-row mg-liquid-panel rounded-xl p-2.5 space-y-2" data-slot="${index}">
+          <div class="flex items-center justify-between gap-2">
+            <label class="text-xs text-gray-300 block">Participante ${index}</label>
+            <button type="button" onclick="this.closest('.additional-performer-row').remove(); refreshPerformerRowOptions(); refreshExtraCreditOptions();" class="text-red-300 text-[10px] px-2 py-1 rounded border border-red-400/20 bg-red-500/10">Remover</button>
+          </div>
+          <select class="additional-performer-select w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-brand-cyan">
+            <option value="">Nenhum</option>
+          </select>
+          <div class="flex flex-wrap gap-3 text-[11px] text-gray-300">
+            <label class="flex items-center gap-1 text-amber-300"><input class="additional-performer-primary" type="checkbox"> Artista principal</label>
+            <label class="flex items-center gap-1"><input class="additional-performer-performance" type="checkbox" checked> Interpretação</label>
+            <label class="flex items-center gap-1"><input class="additional-performer-production" type="checkbox"> Produção</label>
+            <label class="flex items-center gap-1"><input class="additional-performer-writing" type="checkbox"> Letra/Composição</label>
+          </div>
+        </div>`;
+    }
+
+    function addPerformerRow() {
+      const container = document.getElementById('additional-performers-container');
+      if (!container) return;
+      performerRowCounter += 1;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = performerRowTemplate(performerRowCounter);
+      container.appendChild(wrap.firstElementChild);
+      refreshPerformerRowOptions();
+      refreshExtraCreditOptions();
+    }
+
+    function refreshPerformerRowOptions() {
+      const rows = Array.from(document.querySelectorAll('#additional-performers-container .additional-performer-row'));
+      const options = graphData.nodes
+        .slice()
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(n => `<option value="${n.id}">${n.name}</option>`)
+        .join('');
+      rows.forEach(row => {
+        const select = row.querySelector('.additional-performer-select');
+        const current = select.value;
+        select.innerHTML = '<option value="">Nenhum</option>' + options;
+        if (current && Array.from(select.options).some(o => o.value === current)) select.value = current;
+        select.onchange = () => { refreshExtraCreditOptions(); };
+      });
+    }
+
+    function getPerformerEntries() {
+      const baseEntries = [1,2,3].map(slot => {
+        const id = document.getElementById(`link-artist${slot}-select`)?.value || '';
+        if (!id) return null;
+        const roles = [];
+        if (document.getElementById(`link-artist${slot}-performance`)?.checked) roles.push('performance');
+        if (document.getElementById(`link-artist${slot}-production`)?.checked) roles.push('production');
+        if (document.getElementById(`link-artist${slot}-writing`)?.checked) roles.push('writing');
+        const isPrimary = document.getElementById(`link-artist${slot}-primary`)?.checked || false;
+        return { id, roles, isPrimary };
+      }).filter(Boolean);
+
+      const extraRows = Array.from(document.querySelectorAll('#additional-performers-container .additional-performer-row')).map(row => {
+        const id = row.querySelector('.additional-performer-select')?.value || '';
+        if (!id) return null;
+        const roles = [];
+        if (row.querySelector('.additional-performer-performance')?.checked) roles.push('performance');
+        if (row.querySelector('.additional-performer-production')?.checked) roles.push('production');
+        if (row.querySelector('.additional-performer-writing')?.checked) roles.push('writing');
+        const isPrimary = row.querySelector('.additional-performer-primary')?.checked || false;
+        return { id, roles, isPrimary };
+      }).filter(Boolean);
+
+      return [...baseEntries, ...extraRows];
+    }
 
     function addExtraCreditRow() {
       const container = document.getElementById('extra-credits-container');
@@ -2294,7 +2405,10 @@
     }
 
     function refreshExtraCreditOptions() {
-      const performerIds = new Set([1,2,3].map(i => document.getElementById(`link-artist${i}-select`)?.value).filter(Boolean));
+      const performerIds = new Set([
+        ...[1,2,3].map(i => document.getElementById(`link-artist${i}-select`)?.value).filter(Boolean),
+        ...Array.from(document.querySelectorAll('#additional-performers-container .additional-performer-select')).map(el => el.value).filter(Boolean)
+      ]);
       const rows = Array.from(document.querySelectorAll('#extra-credits-container .extra-credit-row'));
       const selectedExtra = new Set(rows.map(r => r.querySelector('.extra-credit-artist')?.value).filter(Boolean));
       rows.forEach(row => {
@@ -2400,36 +2514,22 @@
       if (!await requireAdmin()) return;
       const a1 = document.getElementById('link-artist1-select').value;
       const a2 = document.getElementById('link-artist2-select').value;
-      const a3 = document.getElementById('link-artist3-select').value;
       const track = document.getElementById('link-track-input').value.trim();
       const album = document.getElementById('link-album-input').value.trim();
       const year = parseInt(document.getElementById('link-year-input').value) || new Date().getFullYear();
       if (!a1 || !a2) return alert("Selecione pelo menos os dois primeiros artistas.");
-      const artists = [a1, a2, ...(a3 ? [a3] : [])];
-      const uniqueArtists = [...new Set(artists)];
-      if (uniqueArtists.length < artists.length) return alert("Por favor, selecione artistas diferentes para a colaboração.");
-
-      const rolesForSlot = slot => {
-        const roles = [];
-        if (document.getElementById(`link-artist${slot}-performance`).checked) roles.push('performance');
-        if (document.getElementById(`link-artist${slot}-production`).checked) roles.push('production');
-        if (document.getElementById(`link-artist${slot}-writing`).checked) roles.push('writing');
-        return roles;
-      };
-      const slotEntries = [[a1, rolesForSlot(1)], [a2, rolesForSlot(2)], ...(a3 ? [[a3, rolesForSlot(3)]] : [])];
-      if (slotEntries.some(([, roles]) => roles.length === 0)) return alert('Marque pelo menos um crédito para cada artista selecionado.');
-      const performerCount = slotEntries.filter(([, roles]) => roles.includes('performance')).length;
+      const performerEntriesFull = getPerformerEntries();
+      if (performerEntriesFull.length < 2) return alert('Selecione pelo menos dois artistas participantes.');
+      if (performerEntriesFull.some(entry => entry.roles.length === 0)) return alert('Marque pelo menos um crédito para cada artista selecionado.');
+      const performerCount = performerEntriesFull.filter(entry => entry.roles.includes('performance')).length;
       if (performerCount < 2) return alert('Selecione pelo menos dois artistas com Interpretação.');
-      const primaryIds = [1,2,3].map(slot => ({
-        id: document.getElementById(`link-artist${slot}-select`)?.value || '',
-        checked: document.getElementById(`link-artist${slot}-primary`)?.checked || false,
-        roles: rolesForSlot(slot)
-      })).filter(x => x.id && x.checked).map(x => x.id);
+      const primaryIds = performerEntriesFull.filter(entry => entry.isPrimary).map(entry => entry.id);
       if (!primaryIds.length) return alert('Marque pelo menos um intérprete como Artista principal.');
       if (primaryIds.some(id => {
-        const entry = slotEntries.find(([artistId]) => artistId === id);
-        return !entry || !entry[1].includes('performance');
+        const entry = performerEntriesFull.find(entry => entry.id === id);
+        return !entry || !entry.roles.includes('performance');
       })) return alert('Artista principal também precisa ter Interpretação marcada.');
+      const slotEntries = performerEntriesFull.map(entry => [entry.id, entry.roles]);
       const extraEntries = getExtraCreditEntries();
       if (extraEntries.some(([, roles]) => roles.length === 0)) return alert('Nos créditos adicionais, marque Produção e/ou Letra/Composição.');
       const allIds = [...slotEntries.map(([id]) => id), ...extraEntries.map(([id]) => id)];
@@ -2460,13 +2560,18 @@
         document.getElementById('link-album-input').value = '';
         spotifySelectedTrackMeta.add = null;
         document.getElementById('extra-credits-container').innerHTML = '';
+        document.getElementById('additional-performers-container').innerHTML = '';
+        performerRowCounter = 3;
         extraCreditRowCounter = 0;
         [1,2,3].forEach(slot => {
+          const select = document.getElementById(`link-artist${slot}-select`);
+          if (select) select.value = slot === 3 ? '' : '';
           document.getElementById(`link-artist${slot}-primary`).checked = slot === 1;
           document.getElementById(`link-artist${slot}-performance`).checked = true;
           document.getElementById(`link-artist${slot}-production`).checked = false;
           document.getElementById(`link-artist${slot}-writing`).checked = false;
         });
+        refreshExtraCreditOptions();
         showToast("Colaboração e créditos salvos permanentemente!");
       } catch (error) {
         console.error(error);
@@ -2674,7 +2779,8 @@
       s1.innerHTML = '<option value="">Selecione...</option>' + options;
       s2.innerHTML = '<option value="">Selecione...</option>' + options;
       s3.innerHTML = '<option value="">Nenhum (Apenas duo)</option>' + options;
-      [s1, s2, s3].forEach(s => s.onchange = refreshExtraCreditOptions);
+      [s1, s2, s3].forEach(s => s.onchange = () => { refreshPerformerRowOptions(); refreshExtraCreditOptions(); });
+      refreshPerformerRowOptions();
       refreshExtraCreditOptions();
 
       const genreOptions = Object.keys(genreColors)
