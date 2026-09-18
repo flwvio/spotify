@@ -227,6 +227,11 @@
               </div>
             </div>
 
+            <div id="link-research-meta" class="hidden space-y-2 pt-2 border-t border-gray-800">
+              <a id="link-source-url" target="_blank" class="hidden text-xs text-brand-cyan hover:underline break-all"></a>
+              <div id="link-notes" class="hidden text-xs text-gray-400 whitespace-pre-wrap bg-gray-950/50 border border-gray-800 rounded p-2"></div>
+            </div>
+
             <div id="spotify-player-container" class="pt-2">
               <a id="spotify-search-btn" target="_blank" class="w-full bg-green-600 hover:bg-green-500 text-white text-xs py-2 px-3 rounded flex items-center justify-center space-x-2 font-semibold transition">
                 <i data-lucide="music-2" class="w-4 h-4"></i>
@@ -255,6 +260,14 @@
               <div>
                 <label class="text-xs text-gray-400 block mb-1">Ano</label>
                 <input type="number" id="edit-link-year" min="1950" max="2035" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Fonte dos créditos / pesquisa</label>
+                <input type="url" id="edit-link-source" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan">
+              </div>
+              <div>
+                <label class="text-xs text-gray-400 block mb-1">Notas pessoais</label>
+                <textarea id="edit-link-notes" rows="3" placeholder="Observações sobre a faixa, créditos, pesquisa..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan"></textarea>
               </div>
               <div>
                 <label class="text-xs text-gray-400 block mb-2">Créditos por artista</label>
@@ -499,6 +512,60 @@
       </div>
       <select id="genre-filter" onchange="handleFilter()" class="bg-gray-900/80 backdrop-blur border border-gray-700 text-white text-sm rounded-full px-3 py-2 focus:outline-none focus:border-brand-accent shadow-lg">
       </select>
+      <button type="button" onclick="openExplorer()" class="bg-brand-accent/90 hover:bg-brand-accent backdrop-blur border border-purple-400/30 text-white text-sm rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
+        <i data-lucide="compass" class="w-4 h-4"></i><span>Explorar</span>
+      </button>
+    </div>
+
+    <div id="explorer-panel" class="hidden absolute inset-0 z-30 bg-brand-dark/98 backdrop-blur-sm overflow-y-auto scrollbar-thin">
+      <div class="max-w-6xl mx-auto p-4 md:p-6 space-y-5">
+        <div class="flex items-start justify-between gap-4 sticky top-0 z-10 bg-brand-dark/95 py-2 border-b border-gray-800">
+          <div>
+            <div class="flex items-center gap-2"><i data-lucide="compass" class="w-5 h-5 text-brand-accent"></i><h2 class="text-xl font-bold text-white">Explorar a teia</h2></div>
+            <p class="text-xs text-gray-500 mt-1">Catálogo, padrões, linha do tempo e caminhos entre artistas.</p>
+          </div>
+          <button onclick="closeExplorer()" class="p-2 rounded bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <div class="flex flex-wrap gap-2" id="explorer-tabs">
+          <button data-explorer-tab="catalog" onclick="switchExplorerTab('catalog')" class="explorer-tab px-3 py-2 text-xs rounded border border-brand-accent bg-brand-accent/20 text-white">Catálogo</button>
+          <button data-explorer-tab="stats" onclick="switchExplorerTab('stats')" class="explorer-tab px-3 py-2 text-xs rounded border border-gray-700 bg-gray-900 text-gray-300">Estatísticas</button>
+          <button data-explorer-tab="timeline" onclick="switchExplorerTab('timeline')" class="explorer-tab px-3 py-2 text-xs rounded border border-gray-700 bg-gray-900 text-gray-300">Linha do tempo</button>
+          <button data-explorer-tab="path" onclick="switchExplorerTab('path')" class="explorer-tab px-3 py-2 text-xs rounded border border-gray-700 bg-gray-900 text-gray-300">Caminho</button>
+          <button data-explorer-tab="discoveries" onclick="switchExplorerTab('discoveries')" class="explorer-tab px-3 py-2 text-xs rounded border border-gray-700 bg-gray-900 text-gray-300">Descobertas</button>
+        </div>
+
+        <section id="explorer-catalog" class="explorer-section space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-2 bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+            <input id="catalog-search" oninput="renderCatalog()" placeholder="Buscar artista, faixa ou álbum..." class="md:col-span-2 bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+            <select id="catalog-type" onchange="renderCatalog()" class="bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm text-white"><option value="tracks">Faixas</option><option value="artists">Artistas</option><option value="albums">Álbuns</option></select>
+            <select id="catalog-role" onchange="renderCatalog()" class="bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm text-white"><option value="ALL">Todos os papéis</option><option value="primary">Artista principal</option><option value="performance">Interpretação</option><option value="production">Produção</option><option value="writing">Letra/Composição</option></select>
+            <select id="catalog-year" onchange="renderCatalog()" class="bg-gray-950 border border-gray-700 rounded px-3 py-2 text-sm text-white"><option value="ALL">Todos os anos</option></select>
+          </div>
+          <div id="catalog-summary" class="text-xs text-gray-500"></div>
+          <div id="catalog-results" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+        </section>
+
+        <section id="explorer-stats" class="explorer-section hidden space-y-4">
+          <div id="stats-overview" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div class="bg-gray-900/60 border border-gray-800 rounded-lg p-4"><h3 class="text-sm font-semibold mb-3">Artistas mais conectados</h3><div id="stats-connected" class="space-y-2"></div></div><div class="bg-gray-900/60 border border-gray-800 rounded-lg p-4"><h3 class="text-sm font-semibold mb-3">Créditos de produção e composição</h3><div id="stats-credits" class="space-y-2"></div></div></div>
+        </section>
+
+        <section id="explorer-timeline" class="explorer-section hidden space-y-4">
+          <div class="flex flex-wrap gap-2 items-center"><select id="timeline-artist" onchange="renderTimeline()" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white min-w-56"></select><span class="text-xs text-gray-500">Selecione um artista ou veja toda a base.</span></div>
+          <div id="timeline-results" class="space-y-3"></div>
+        </section>
+
+        <section id="explorer-path" class="explorer-section hidden space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-2 items-center"><select id="path-from" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white"></select><i data-lucide="arrow-right" class="hidden md:block w-4 h-4 text-gray-500"></i><select id="path-to" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white"></select><button onclick="findArtistPath()" class="bg-brand-accent hover:bg-purple-600 rounded px-4 py-2 text-sm font-semibold">Encontrar</button></div>
+          <div id="path-results" class="bg-gray-900/50 border border-gray-800 rounded-lg p-4 text-sm text-gray-400">Escolha dois artistas para descobrir a conexão entre eles.</div>
+        </section>
+
+        <section id="explorer-discoveries" class="explorer-section hidden space-y-4">
+          <div class="flex justify-between items-center"><div><h3 class="font-semibold">Descobertas automáticas</h3><p class="text-xs text-gray-500">Padrões calculados a partir da sua própria base.</p></div><button onclick="renderDiscoveries()" class="text-xs bg-gray-900 hover:bg-gray-800 border border-gray-700 px-3 py-2 rounded">Recalcular</button></div>
+          <div id="discoveries-results" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+        </section>
+      </div>
     </div>
 
     <svg id="graph-svg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
@@ -1010,10 +1077,10 @@
         db.from('artists').select('id,name,genre,image_url,spotify_id,spotify_url'),
         db.from('genre_colors').select('genre,color')
       ]);
-      let collaborationsResult = await db.from('collaborations').select('id,track,album,year,collaboration_artists(artist_id,roles,is_primary)').order('id');
+      let collaborationsResult = await db.from('collaborations').select('id,track,album,year,spotify_track_id,spotify_url,album_image_url,release_date,notes,source_url,collaboration_artists(artist_id,roles,is_primary)').order('id');
       if (collaborationsResult.error && /album/i.test(collaborationsResult.error.message || '')) {
         supportsAlbumField = false;
-        collaborationsResult = await db.from('collaborations').select('id,track,year,collaboration_artists(artist_id,roles,is_primary)').order('id');
+        collaborationsResult = await db.from('collaborations').select('id,track,year,spotify_track_id,spotify_url,album_image_url,release_date,notes,source_url,collaboration_artists(artist_id,roles,is_primary)').order('id');
       } else {
         supportsAlbumField = true;
       }
@@ -1055,7 +1122,13 @@
             credits,
             track: collab.track || '',
             album: collab.album || '',
-            year: collab.year || null
+            year: collab.year || null,
+            spotifyTrackId: collab.spotify_track_id || '',
+            spotifyUrl: collab.spotify_url || '',
+            albumImage: collab.album_image_url || '',
+            releaseDate: collab.release_date || '',
+            notes: collab.notes || '',
+            sourceUrl: collab.source_url || ''
           };
         })
       };
@@ -1449,6 +1522,20 @@
       document.getElementById('edit-link-track').value = link.track || '';
       document.getElementById('edit-link-album').value = link.album || '';
       document.getElementById('edit-link-year').value = link.year || '';
+      document.getElementById('edit-link-source').value = link.sourceUrl || '';
+      document.getElementById('edit-link-notes').value = link.notes || '';
+      spotifySelectedTrackMeta.edit = {
+        spotify_track_id: link.spotifyTrackId || null,
+        spotify_url: link.spotifyUrl || null,
+        album_image_url: link.albumImage || null,
+        release_date: link.releaseDate || null
+      };
+      const sourceLink = document.getElementById('link-source-url');
+      const notesBox = document.getElementById('link-notes');
+      const researchBox = document.getElementById('link-research-meta');
+      if (link.sourceUrl) { sourceLink.href = link.sourceUrl; sourceLink.textContent = 'Fonte da pesquisa / créditos'; sourceLink.classList.remove('hidden'); } else sourceLink.classList.add('hidden');
+      if (link.notes) { notesBox.textContent = link.notes; notesBox.classList.remove('hidden'); } else notesBox.classList.add('hidden');
+      researchBox.classList.toggle('hidden', !link.sourceUrl && !link.notes);
       const editSpotifyQuery = document.getElementById('edit-spotify-track-query');
       if (editSpotifyQuery) {
         const currentNames = link.artists.map(ref => {
@@ -1500,7 +1587,7 @@
 
       const spotifyBtn = document.getElementById('spotify-search-btn');
       const searchQuery = encodeURIComponent(`${artistNames.join(" ")} ${trackTitle}`);
-      spotifyBtn.href = `https://open.spotify.com/search/${searchQuery}`;
+      spotifyBtn.href = link.spotifyUrl || `https://open.spotify.com/search/${searchQuery}`;
 
       switchTab('info');
     }
@@ -1537,6 +1624,7 @@
     }
 
     const spotifyTrackSearchCache = { add: [], edit: [] };
+    const spotifySelectedTrackMeta = { add: null, edit: null };
 
     async function fetchTracksFromSpotify(query) {
       const token = await getSpotifyToken();
@@ -1592,6 +1680,12 @@
       const album = item.album?.name || '';
       const releaseDate = item.album?.release_date || '';
       const year = releaseDate ? parseInt(releaseDate.slice(0, 4), 10) : '';
+      spotifySelectedTrackMeta[target] = {
+        spotify_track_id: item.id || null,
+        spotify_url: item.external_urls?.spotify || null,
+        album_image_url: item.album?.images?.[0]?.url || null,
+        release_date: releaseDate || null
+      };
       if (target === 'add') {
         document.getElementById('link-track-input').value = item.name || '';
         document.getElementById('link-album-input').value = album;
@@ -1719,6 +1813,8 @@
       if (!selectedLink || !selectedLink.dbId || !await requireAdmin()) return;
       const track = document.getElementById('edit-link-track').value.trim();
       const album = document.getElementById('edit-link-album').value.trim();
+      const sourceUrl = document.getElementById('edit-link-source').value.trim();
+      const notes = document.getElementById('edit-link-notes').value.trim();
       const yearValue = document.getElementById('edit-link-year').value;
       const year = yearValue ? parseInt(yearValue, 10) : null;
       const credits = getEditedCreditsFromForm(selectedLink);
@@ -1731,16 +1827,19 @@
       if (primaryIds.some(id => !(credits[id] || []).includes('performance'))) return alert('Artista principal também precisa ter Interpretação marcada.');
 
       try {
-        const collabPayload = supportsAlbumField ? {
-          track,
-          album: album || null,
-          year,
-          updated_at: new Date().toISOString()
-        } : {
+        const meta = spotifySelectedTrackMeta.edit || {};
+        const commonPayload = {
           track,
           year,
+          notes: notes || null,
+          source_url: sourceUrl || null,
+          spotify_track_id: meta.spotify_track_id || null,
+          spotify_url: meta.spotify_url || null,
+          album_image_url: meta.album_image_url || null,
+          release_date: meta.release_date || null,
           updated_at: new Date().toISOString()
         };
+        const collabPayload = supportsAlbumField ? { ...commonPayload, album: album || null } : commonPayload;
         const { error: collabError } = await db.from('collaborations').update(collabPayload).eq('id', selectedLink.dbId);
         if (collabError) throw collabError;
 
@@ -1952,7 +2051,15 @@
       const allCreditEntries = [...slotEntries, ...extraEntries];
 
       try {
-        const collabPayload = supportsAlbumField ? { track, album: album || null, year } : { track, year };
+        const meta = spotifySelectedTrackMeta.add || {};
+        const commonPayload = {
+          track, year,
+          spotify_track_id: meta.spotify_track_id || null,
+          spotify_url: meta.spotify_url || null,
+          album_image_url: meta.album_image_url || null,
+          release_date: meta.release_date || null
+        };
+        const collabPayload = supportsAlbumField ? { ...commonPayload, album: album || null } : commonPayload;
         const { data: collab, error } = await db.from('collaborations').insert(collabPayload).select('id').single();
         if (error) throw error;
         const creditRows = allCreditEntries.map(([artist_id, roles]) => ({ collaboration_id: collab.id, artist_id, roles, is_primary: primaryIds.includes(artist_id) }));
@@ -1965,6 +2072,7 @@
         updateGraph();
         document.getElementById('link-track-input').value = '';
         document.getElementById('link-album-input').value = '';
+        spotifySelectedTrackMeta.add = null;
         document.getElementById('extra-credits-container').innerHTML = '';
         extraCreditRowCounter = 0;
         [1,2,3].forEach(slot => {
@@ -2195,6 +2303,162 @@
       const currentFilter = genreFilter.value || 'ALL';
       genreFilter.innerHTML = '<option value="ALL">Todos os Gêneros</option>' + genreOptions;
       genreFilter.value = currentFilter;
+    }
+
+    // --- EXPLORER / RESEARCH TOOLS ---
+    function artistNameById(id) {
+      return graphData.nodes.find(n => n.id === id)?.name || id;
+    }
+
+    function openExplorer() {
+      document.getElementById('explorer-panel').classList.remove('hidden');
+      populateExplorerControls();
+      switchExplorerTab('catalog');
+      renderCatalog();
+      lucide.createIcons();
+    }
+
+    function closeExplorer() {
+      document.getElementById('explorer-panel').classList.add('hidden');
+    }
+
+    function switchExplorerTab(tab) {
+      document.querySelectorAll('.explorer-section').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`explorer-${tab}`)?.classList.remove('hidden');
+      document.querySelectorAll('.explorer-tab').forEach(btn => {
+        const active = btn.dataset.explorerTab === tab;
+        btn.classList.toggle('border-brand-accent', active);
+        btn.classList.toggle('bg-brand-accent/20', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('border-gray-700', !active);
+        btn.classList.toggle('bg-gray-900', !active);
+        btn.classList.toggle('text-gray-300', !active);
+      });
+      if (tab === 'catalog') renderCatalog();
+      if (tab === 'stats') renderStats();
+      if (tab === 'timeline') renderTimeline();
+      if (tab === 'discoveries') renderDiscoveries();
+      lucide.createIcons();
+    }
+
+    function populateExplorerControls() {
+      const years = [...new Set(graphData.links.map(l => l.year).filter(Boolean))].sort((a,b) => b-a);
+      const yearSelect = document.getElementById('catalog-year');
+      if (yearSelect) yearSelect.innerHTML = '<option value="ALL">Todos os anos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+      const opts = graphData.nodes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(n => `<option value="${n.id}">${escapeHtml(n.name)}</option>`).join('');
+      const timeline = document.getElementById('timeline-artist');
+      if (timeline) timeline.innerHTML = '<option value="ALL">Toda a base</option>' + opts;
+      const from = document.getElementById('path-from');
+      const to = document.getElementById('path-to');
+      if (from) from.innerHTML = '<option value="">Artista A...</option>' + opts;
+      if (to) to.innerHTML = '<option value="">Artista B...</option>' + opts;
+    }
+
+    function catalogFilteredLinks() {
+      const q = (document.getElementById('catalog-search')?.value || '').trim().toLowerCase();
+      const year = document.getElementById('catalog-year')?.value || 'ALL';
+      const role = document.getElementById('catalog-role')?.value || 'ALL';
+      return graphData.links.filter(l => {
+        if (year !== 'ALL' && String(l.year) !== year) return false;
+        if (role !== 'ALL') {
+          if (role === 'primary' && !(l.primaryArtists || []).length) return false;
+          if (role !== 'primary' && !Object.values(l.credits || {}).some(roles => roles.includes(role))) return false;
+        }
+        if (!q) return true;
+        const names = Object.keys(l.credits || {}).map(artistNameById).join(' ');
+        return `${l.track} ${l.album} ${names}`.toLowerCase().includes(q);
+      });
+    }
+
+    function trackCardHtml(l) {
+      const primaries = (l.primaryArtists || []).map(artistNameById);
+      const performers = (l.artists || []).map(a => typeof a === 'object' ? a.id : a).map(artistNameById);
+      const feats = performers.filter(name => !primaries.includes(name));
+      const producers = Object.entries(l.credits || {}).filter(([,r])=>r.includes('production')).map(([id])=>artistNameById(id));
+      const writers = Object.entries(l.credits || {}).filter(([,r])=>r.includes('writing')).map(([id])=>artistNameById(id));
+      const cover = l.albumImage ? `<img src="${escapeHtml(l.albumImage)}" class="w-16 h-16 rounded object-cover border border-gray-700 flex-none">` : '<div class="w-16 h-16 rounded bg-gray-800 border border-gray-700 flex items-center justify-center flex-none"><i data-lucide="music" class="w-5 h-5 text-gray-600"></i></div>';
+      return `<button type="button" onclick="openCatalogTrack(${Number(l.dbId)})" class="w-full text-left bg-gray-900/70 border border-gray-800 hover:border-gray-600 rounded-lg p-3 flex gap-3 transition">${cover}<div class="min-w-0 flex-1"><div class="font-semibold text-gray-100 truncate">${escapeHtml(l.track || 'Sem título')}</div><div class="text-xs text-gray-400 truncate">${escapeHtml(primaries.join(' & ') || performers.join(' & ') || 'Artista não definido')}${feats.length ? ' feat. ' + escapeHtml(feats.join(', ')) : ''}</div><div class="text-[11px] text-gray-500 truncate">${escapeHtml(l.album || 'Single / álbum não informado')}${l.year ? ' • ' + l.year : ''}</div>${producers.length ? `<div class="text-[10px] text-brand-cyan mt-1 truncate">Produção: ${escapeHtml(producers.join(', '))}</div>` : ''}${writers.length ? `<div class="text-[10px] text-brand-accent truncate">Letra: ${escapeHtml(writers.join(', '))}</div>` : ''}</div></button>`;
+    }
+
+    function renderCatalog() {
+      const type = document.getElementById('catalog-type')?.value || 'tracks';
+      const q = (document.getElementById('catalog-search')?.value || '').trim().toLowerCase();
+      const results = document.getElementById('catalog-results');
+      const summary = document.getElementById('catalog-summary');
+      if (!results) return;
+      const links = catalogFilteredLinks();
+      if (type === 'tracks') {
+        const sorted = links.slice().sort((a,b)=>(b.year||0)-(a.year||0)||(a.track||'').localeCompare(b.track||''));
+        results.innerHTML = sorted.map(trackCardHtml).join('') || '<div class="text-sm text-gray-500">Nenhuma faixa encontrada.</div>';
+        summary.textContent = `${sorted.length} faixa(s) encontrada(s).`;
+      } else if (type === 'artists') {
+        const artistRows = graphData.nodes.map(n => {
+          const items = links.filter(l => Object.prototype.hasOwnProperty.call(l.credits || {}, n.id));
+          const partners = new Set(items.flatMap(l => (l.artists || []).map(a=>typeof a==='object'?a.id:a)).filter(id=>id!==n.id));
+          return {n, items, partners};
+        }).filter(x => x.items.length && (!q || x.n.name.toLowerCase().includes(q) || x.n.genre.toLowerCase().includes(q))).sort((a,b)=>b.items.length-a.items.length);
+        results.innerHTML = artistRows.map(({n,items,partners}) => `<button onclick="openCatalogArtist('${n.id}')" class="text-left bg-gray-900/70 border border-gray-800 hover:border-gray-600 rounded-lg p-3 flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-gray-800 bg-cover bg-center border border-gray-700 flex-none" style="${n.image ? `background-image:url('${n.image}')` : ''}">${n.image?'':`<span class="flex h-full items-center justify-center font-bold">${escapeHtml(n.name[0]||'?')}</span>`}</div><div><div class="font-semibold">${escapeHtml(n.name)}</div><div class="text-xs text-gray-500">${escapeHtml(n.genre)} • ${items.length} crédito(s) • ${partners.size} parceiro(s)</div></div></button>`).join('') || '<div class="text-sm text-gray-500">Nenhum artista encontrado.</div>';
+        summary.textContent = `${artistRows.length} artista(s) encontrado(s).`;
+      } else {
+        const groups = new Map();
+        links.forEach(l => { const name=(l.album||'Singles / sem álbum informado').trim(); if(!groups.has(name)) groups.set(name,[]); groups.get(name).push(l); });
+        const albums = [...groups.entries()].filter(([name])=>!q||name.toLowerCase().includes(q)).sort((a,b)=>a[0].localeCompare(b[0]));
+        results.innerHTML = albums.map(([name,tracks]) => { const cover=tracks.find(t=>t.albumImage)?.albumImage; const years=[...new Set(tracks.map(t=>t.year).filter(Boolean))].sort(); const artists=[...new Set(tracks.flatMap(t=>(t.primaryArtists||t.artists||[]).map(id=>typeof id==='object'?id.id:id)).map(artistNameById))]; return `<div class="bg-gray-900/70 border border-gray-800 rounded-lg p-3 flex gap-3">${cover?`<img src="${escapeHtml(cover)}" class="w-16 h-16 rounded object-cover border border-gray-700">`:'<div class="w-16 h-16 rounded bg-gray-800 border border-gray-700"></div>'}<div class="min-w-0"><div class="font-semibold truncate">${escapeHtml(name)}</div><div class="text-xs text-gray-500 truncate">${escapeHtml(artists.join(', '))}</div><div class="text-[11px] text-gray-600">${tracks.length} faixa(s)${years.length?' • '+years.join(', '):''}</div></div></div>`; }).join('') || '<div class="text-sm text-gray-500">Nenhum álbum encontrado.</div>';
+        summary.textContent = `${albums.length} álbum(ns)/projeto(s) encontrado(s).`;
+      }
+      lucide.createIcons();
+    }
+
+    function openCatalogTrack(id) { const l=graphData.links.find(x=>Number(x.dbId)===Number(id)); if(l){ closeExplorer(); selectLink(l); } }
+    function openCatalogArtist(id) { const n=graphData.nodes.find(x=>x.id===id); if(n){ closeExplorer(); selectNode(n); } }
+
+    function renderStats() {
+      const overview=document.getElementById('stats-overview');
+      const albums=new Set(graphData.links.map(l=>(l.album||'').trim()).filter(Boolean));
+      const years=graphData.links.map(l=>l.year).filter(Boolean);
+      const cards=[['Artistas',graphData.nodes.length],['Faixas',graphData.links.length],['Álbuns / projetos',albums.size],['Período',years.length?`${Math.min(...years)}–${Math.max(...years)}`:'—']];
+      overview.innerHTML=cards.map(([k,v])=>`<div class="bg-gray-900/70 border border-gray-800 rounded-lg p-4"><div class="text-2xl font-bold text-white">${v}</div><div class="text-xs text-gray-500 uppercase mt-1">${k}</div></div>`).join('');
+      const connected=graphData.nodes.map(n=>{const tracks=graphData.links.filter(l=>(l.artists||[]).map(a=>typeof a==='object'?a.id:a).includes(n.id)); const partners=new Set(tracks.flatMap(l=>(l.artists||[]).map(a=>typeof a==='object'?a.id:a)).filter(id=>id!==n.id)); return {n,count:partners.size,tracks:tracks.length};}).sort((a,b)=>b.count-a.count).slice(0,10);
+      document.getElementById('stats-connected').innerHTML=connected.map((x,i)=>`<button onclick="openCatalogArtist('${x.n.id}')" class="w-full flex justify-between text-xs border-b border-gray-800 py-2 hover:text-white"><span>${i+1}. ${escapeHtml(x.n.name)}</span><span class="text-gray-500">${x.count} parceiros • ${x.tracks} faixas</span></button>`).join('');
+      const credits=graphData.nodes.map(n=>{const prod=graphData.links.filter(l=>(l.credits?.[n.id]||[]).includes('production')).length; const write=graphData.links.filter(l=>(l.credits?.[n.id]||[]).includes('writing')).length; return {n,prod,write,total:prod+write};}).filter(x=>x.total).sort((a,b)=>b.total-a.total).slice(0,12);
+      document.getElementById('stats-credits').innerHTML=credits.map(x=>`<button onclick="openCatalogArtist('${x.n.id}')" class="w-full flex justify-between text-xs border-b border-gray-800 py-2 hover:text-white"><span>${escapeHtml(x.n.name)}</span><span class="text-gray-500">${x.prod} prod. • ${x.write} letra</span></button>`).join('')||'<div class="text-xs text-gray-500">Ainda não há créditos suficientes.</div>';
+    }
+
+    function renderTimeline() {
+      const artistId=document.getElementById('timeline-artist')?.value||'ALL';
+      const links=graphData.links.filter(l=>artistId==='ALL'||Object.prototype.hasOwnProperty.call(l.credits||{},artistId));
+      const groups=new Map(); links.forEach(l=>{const y=l.year||'Sem ano'; if(!groups.has(y))groups.set(y,[]); groups.get(y).push(l);});
+      const sorted=[...groups.entries()].sort((a,b)=>String(b[0]).localeCompare(String(a[0]),undefined,{numeric:true}));
+      const max=Math.max(1,...sorted.map(([,ls])=>ls.length));
+      document.getElementById('timeline-results').innerHTML=sorted.map(([y,ls])=>`<div class="bg-gray-900/60 border border-gray-800 rounded-lg p-3"><div class="flex items-center gap-3"><div class="w-16 font-mono text-sm text-gray-300">${y}</div><div class="flex-1 h-2 bg-gray-800 rounded overflow-hidden"><div class="h-full bg-brand-accent rounded" style="width:${Math.max(4,(ls.length/max)*100)}%"></div></div><div class="text-xs text-gray-500">${ls.length}</div></div><div class="mt-2 flex flex-wrap gap-1">${ls.slice(0,12).map(l=>`<button onclick="openCatalogTrack(${Number(l.dbId)})" class="text-[10px] bg-gray-950 hover:bg-gray-800 border border-gray-800 rounded px-2 py-1">${escapeHtml(l.track||'Sem título')}</button>`).join('')}${ls.length>12?`<span class="text-[10px] text-gray-600 px-2 py-1">+${ls.length-12}</span>`:''}</div></div>`).join('')||'<div class="text-sm text-gray-500">Nenhum dado para a linha do tempo.</div>';
+    }
+
+    function findArtistPath() {
+      const start=document.getElementById('path-from').value, goal=document.getElementById('path-to').value, out=document.getElementById('path-results');
+      if(!start||!goal) return out.textContent='Selecione os dois artistas.';
+      if(start===goal) return out.textContent='Escolha artistas diferentes.';
+      const adj=new Map(graphData.nodes.map(n=>[n.id,new Set()]));
+      graphData.links.forEach(l=>{const ids=(l.artists||[]).map(a=>typeof a==='object'?a.id:a); for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){adj.get(ids[i])?.add(ids[j]);adj.get(ids[j])?.add(ids[i]);}});
+      const q=[start], prev=new Map([[start,null]]); while(q.length){const cur=q.shift(); if(cur===goal)break; for(const nx of adj.get(cur)||[]){if(!prev.has(nx)){prev.set(nx,cur);q.push(nx);}}}
+      if(!prev.has(goal)){out.innerHTML='<div class="text-gray-500">Não encontrei um caminho de interpretação entre esses artistas na base atual.</div>';return;}
+      const path=[]; for(let cur=goal;cur;cur=prev.get(cur))path.push(cur); path.reverse();
+      const pieces=[]; for(let i=0;i<path.length;i++){pieces.push(`<button onclick="openCatalogArtist('${path[i]}')" class="font-semibold text-brand-accent hover:underline">${escapeHtml(artistNameById(path[i]))}</button>`); if(i<path.length-1){const collab=graphData.links.find(l=>{const ids=(l.artists||[]).map(a=>typeof a==='object'?a.id:a);return ids.includes(path[i])&&ids.includes(path[i+1]);}); pieces.push(`<span class="text-gray-600">— <button onclick="openCatalogTrack(${Number(collab?.dbId||0)})" class="text-gray-400 hover:text-white">${escapeHtml(collab?.track||'colaboração')}</button> →</span>`);}}
+      out.innerHTML=`<div class="text-xs text-gray-500 mb-3">${path.length-1} conexão(ões)</div><div class="flex flex-wrap gap-2 items-center">${pieces.join(' ')}</div>`;
+    }
+
+    function renderDiscoveries() {
+      const cards=[];
+      // recurring performer pairs
+      const pairCount=new Map(); graphData.links.forEach(l=>{const ids=(l.artists||[]).map(a=>typeof a==='object'?a.id:a).sort(); for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const k=`${ids[i]}|${ids[j]}`;pairCount.set(k,(pairCount.get(k)||0)+1);}});
+      [...pairCount.entries()].filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,4).forEach(([k,c])=>{const [a,b]=k.split('|');cards.push({title:'Dupla recorrente',body:`${artistNameById(a)} e ${artistNameById(b)} aparecem juntos em ${c} faixas.`});});
+      // producers connecting singers who do not perform together
+      graphData.nodes.forEach(prod=>{const produced=graphData.links.filter(l=>(l.credits?.[prod.id]||[]).includes('production')); const singers=[...new Set(produced.flatMap(l=>(l.artists||[]).map(a=>typeof a==='object'?a.id:a)).filter(id=>id!==prod.id))]; if(singers.length>=3)cards.push({title:'Produtor como elo',body:`${prod.name} produziu faixas envolvendo ${singers.length} artistas diferentes da teia.`});});
+      // metadata gaps
+      const noAlbum=graphData.links.filter(l=>!l.album).length, noPrimary=graphData.links.filter(l=>(l.artists||[]).length&&!(l.primaryArtists||[]).length).length, noSource=graphData.links.filter(l=>Object.values(l.credits||{}).some(r=>r.includes('production')||r.includes('writing'))&&!l.sourceUrl).length;
+      if(noAlbum)cards.push({title:'Pesquisa pendente',body:`${noAlbum} faixa(s) ainda estão sem álbum/projeto informado.`});
+      if(noPrimary)cards.push({title:'Titularidade pendente',body:`${noPrimary} faixa(s) ainda não têm artista principal definido.`});
+      if(noSource)cards.push({title:'Fontes para completar',body:`${noSource} faixa(s) com produção/letra cadastrada ainda não têm fonte registrada.`});
+      document.getElementById('discoveries-results').innerHTML=cards.slice(0,12).map(c=>`<div class="bg-gray-900/70 border border-gray-800 rounded-lg p-4"><div class="text-sm font-semibold text-gray-100">${escapeHtml(c.title)}</div><div class="text-xs text-gray-400 mt-1 leading-relaxed">${escapeHtml(c.body)}</div></div>`).join('')||'<div class="text-sm text-gray-500">Adicione mais dados para gerar descobertas.</div>';
     }
 
     function switchTab(tab) {
