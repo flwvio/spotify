@@ -2325,7 +2325,7 @@
       const emptyCreditArtist = Object.keys(credits).find(id => !credits[id].length);
       if (emptyCreditArtist) return alert('Cada artista precisa ter pelo menos um crédito marcado.');
       const performerCount = Object.values(credits).filter(roles => roles.includes('performance')).length;
-      if (performerCount < 2) return alert('A colaboração precisa manter pelo menos dois artistas com Interpretação.');
+      if (performerCount < 1) return alert('A faixa precisa manter pelo menos um artista com Interpretação.');
       const primaryIds = getEditedPrimaryIds();
       if (primaryIds.length < 1) return alert('Marque pelo menos um intérprete como Artista principal.');
       if (primaryIds.some(id => !(credits[id] || []).includes('performance'))) return alert('Artista principal também precisa ter Interpretação marcada.');
