@@ -93,14 +93,23 @@
       --mg-pink: #EC4899;
       --mg-cyan: #22D3EE;
       --mg-green: #1DB954;
+      --theme-top: #101a37;
+      --theme-mid: #0b1226;
+      --theme-bottom: #09101f;
+      --theme-glow-a: 96,165,250;
+      --theme-glow-b: 139,92,246;
+      --theme-glow-c: 34,211,238;
+      --glass-alpha: .62;
+      --glass-alpha-soft: .48;
+      --glass-blur: 30px;
     }
     html, body { background: var(--mg-bg); }
     body {
       background:
-        radial-gradient(circle at 16% 12%, rgba(96,165,250,.34), transparent 28%),
-        radial-gradient(circle at 78% 18%, rgba(139,92,246,.34), transparent 26%),
-        radial-gradient(circle at 50% 88%, rgba(34,211,238,.16), transparent 22%),
-        linear-gradient(180deg, #101a37 0%, #0b1226 38%, #09101f 100%);
+        radial-gradient(circle at 16% 12%, rgba(var(--theme-glow-a),.34), transparent 28%),
+        radial-gradient(circle at 78% 18%, rgba(var(--theme-glow-b),.34), transparent 26%),
+        radial-gradient(circle at 50% 88%, rgba(var(--theme-glow-c),.16), transparent 22%),
+        linear-gradient(180deg, var(--theme-top) 0%, var(--theme-mid) 38%, var(--theme-bottom) 100%);
       color: var(--mg-text);
       overflow: hidden;
     }
@@ -110,7 +119,7 @@
       inset:-8% -8% auto auto;
       width:42vw;
       height:42vw;
-      background:radial-gradient(circle, rgba(129,140,248,.26), transparent 60%);
+      background:radial-gradient(circle, rgba(var(--theme-glow-b),.26), transparent 60%);
       filter:blur(42px);
       pointer-events:none;
       z-index:0;
@@ -123,7 +132,7 @@
       bottom:-10vw;
       width:42vw;
       height:42vw;
-      background:radial-gradient(circle, rgba(34,211,238,.18), transparent 62%);
+      background:radial-gradient(circle, rgba(var(--theme-glow-c),.18), transparent 62%);
       filter:blur(48px);
       pointer-events:none;
       z-index:0;
@@ -132,7 +141,7 @@
     .mg-topbar {
       position: fixed; inset: 0 0 auto 0; height: 64px; z-index: 60;
       display: flex; align-items: center; gap: 18px; padding: 0 18px;
-      background: linear-gradient(180deg, rgba(22,30,54,.48), rgba(13,18,34,.34)); backdrop-filter: blur(28px) saturate(160%);
+      background: linear-gradient(180deg, rgba(22,30,54,var(--glass-alpha-soft)), rgba(13,18,34,.34)); backdrop-filter: blur(var(--glass-blur)) saturate(160%);
       border-bottom: 1px solid var(--mg-border);
     }
     .mg-brand { display:flex; align-items:center; gap:10px; min-width:max-content; }
@@ -155,7 +164,7 @@
       position: fixed !important; top:76px; right:12px; bottom:12px; left:auto;
       width:min(430px, calc(100vw - 24px)) !important; height:auto !important;
       z-index:55; border:1px solid var(--mg-border) !important; border-radius:22px;
-      background:linear-gradient(180deg, rgba(18,24,44,.62), rgba(12,18,34,.56)) !important; backdrop-filter:blur(30px) saturate(160%);
+      background:linear-gradient(180deg, rgba(18,24,44,var(--glass-alpha)), rgba(12,18,34,var(--glass-alpha-soft))) !important; backdrop-filter:blur(var(--glass-blur)) saturate(160%);
       box-shadow:0 28px 90px rgba(0,0,0,.48); overflow:hidden;
       transform:translateX(calc(100% + 30px)); opacity:0; pointer-events:none;
       transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
@@ -425,7 +434,8 @@
             </div>
 
             <div id="link-primary-warning" class="hidden text-[11px] text-amber-300 bg-amber-950/30 border border-amber-800/40 rounded px-2 py-1.5">Artista principal ainda não definido para esta faixa.</div>
-            <div id="link-artists-container" class="space-y-2 pt-2 border-t border-gray-800 text-sm">
+            <div id="link-credit-summary" class="hidden text-[11px] text-gray-400"></div>
+            <div id="link-artists-container" class="space-y-3 pt-2 border-t border-gray-800 text-sm">
             </div>
 
             <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-800">
@@ -498,7 +508,7 @@
                 <button type="button" onclick="addCreditArtistToEditForm()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] py-1.5 rounded">Adicionar aos créditos</button>
               </div>
               <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar colaboração</button>
+                <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar faixa</button>
                 <button type="button" onclick="deleteCurrentLink()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 px-3 rounded transition border border-red-500/30">Remover</button>
               </div>
             </form>
@@ -669,6 +679,33 @@
 
       <!-- TAB 4: SETTINGS / PHYSICS & DATA EXPORT -->
       <div id="tab-settings" class="hidden space-y-6">
+        <div class="space-y-3 mg-liquid-panel p-3 rounded-xl">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Tema</h3>
+              <p class="text-[10px] text-gray-500 mt-0.5">Altera o fundo e a intensidade dos painéis de vidro.</p>
+            </div>
+            <i data-lucide="sparkles" class="w-4 h-4 text-violet-300"></i>
+          </div>
+          <select id="theme-select" onchange="applyTheme(this.value)" class="w-full bg-black/25 border border-white/[.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+            <option value="aurora">Azul + Roxo</option>
+            <option value="violet">Roxo escuro</option>
+            <option value="ocean">Azul oceano</option>
+            <option value="rose">Rosa + Violeta</option>
+            <option value="mint">Verde + Ciano</option>
+            <option value="graphite">Grafite</option>
+            <option value="custom">Personalizado</option>
+          </select>
+          <div id="custom-theme-controls" class="hidden grid grid-cols-2 gap-2">
+            <label class="text-[10px] text-gray-400">Cor 1<input id="theme-custom-a" type="color" value="#2563eb" oninput="applyCustomTheme()" class="mt-1 w-full h-9 rounded bg-transparent border border-white/[.08]"></label>
+            <label class="text-[10px] text-gray-400">Cor 2<input id="theme-custom-b" type="color" value="#7c3aed" oninput="applyCustomTheme()" class="mt-1 w-full h-9 rounded bg-transparent border border-white/[.08]"></label>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 flex justify-between mb-1"><span>Intensidade do vidro</span><span id="glass-strength-label">Médio</span></label>
+            <input id="glass-strength" type="range" min="20" max="90" value="62" oninput="setGlassStrength(this.value)" class="w-full accent-brand-accent">
+          </div>
+        </div>
+
         <div class="space-y-4">
           <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ajustes do Grafo</h3>
           <div>
@@ -1598,6 +1635,70 @@
       // intencionalmente vazio: evita voltar a gravar no localStorage.
     }
 
+    // --- THEMES ---
+    const THEME_PRESETS = {
+      aurora: { top:'#101a37', mid:'#0b1226', bottom:'#09101f', glowA:'96,165,250', glowB:'139,92,246', glowC:'34,211,238' },
+      violet: { top:'#24113f', mid:'#150d2d', bottom:'#090814', glowA:'168,85,247', glowB:'124,58,237', glowC:'236,72,153' },
+      ocean: { top:'#0d3551', mid:'#0a213b', bottom:'#071421', glowA:'56,189,248', glowB:'14,165,233', glowC:'45,212,191' },
+      rose: { top:'#3b1636', mid:'#26102d', bottom:'#100a1a', glowA:'244,114,182', glowB:'168,85,247', glowC:'236,72,153' },
+      mint: { top:'#10383a', mid:'#0b242b', bottom:'#071618', glowA:'45,212,191', glowB:'34,211,238', glowC:'74,222,128' },
+      graphite: { top:'#20242c', mid:'#13171e', bottom:'#090b0f', glowA:'148,163,184', glowB:'100,116,139', glowC:'71,85,105' }
+    };
+
+    function hexToRgbString(hex) {
+      const v = String(hex || '').replace('#','');
+      if (!/^[0-9a-fA-F]{6}$/.test(v)) return '139,92,246';
+      return `${parseInt(v.slice(0,2),16)},${parseInt(v.slice(2,4),16)},${parseInt(v.slice(4,6),16)}`;
+    }
+
+    function darkenHex(hex, factor) {
+      const v = String(hex || '').replace('#','');
+      if (!/^[0-9a-fA-F]{6}$/.test(v)) return '#0b1226';
+      const parts=[0,2,4].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(v.slice(i,i+2),16)*factor))));
+      return '#' + parts.map(n=>n.toString(16).padStart(2,'0')).join('');
+    }
+
+    function applyTheme(name, persist=true) {
+      const root=document.documentElement;
+      const select=document.getElementById('theme-select');
+      const custom=document.getElementById('custom-theme-controls');
+      if (select) select.value=name;
+      if (custom) custom.classList.toggle('hidden', name !== 'custom');
+      if (name === 'custom') { applyCustomTheme(persist); return; }
+      const t=THEME_PRESETS[name] || THEME_PRESETS.aurora;
+      root.style.setProperty('--theme-top', t.top); root.style.setProperty('--theme-mid', t.mid); root.style.setProperty('--theme-bottom', t.bottom);
+      root.style.setProperty('--theme-glow-a', t.glowA); root.style.setProperty('--theme-glow-b', t.glowB); root.style.setProperty('--theme-glow-c', t.glowC);
+      if (persist) localStorage.setItem('musicGraphTheme', name);
+    }
+
+    function applyCustomTheme(persist=true) {
+      const a=document.getElementById('theme-custom-a')?.value || '#2563eb';
+      const b=document.getElementById('theme-custom-b')?.value || '#7c3aed';
+      const root=document.documentElement;
+      root.style.setProperty('--theme-top', darkenHex(a,.55)); root.style.setProperty('--theme-mid', darkenHex(b,.34)); root.style.setProperty('--theme-bottom', '#080d18');
+      root.style.setProperty('--theme-glow-a', hexToRgbString(a)); root.style.setProperty('--theme-glow-b', hexToRgbString(b)); root.style.setProperty('--theme-glow-c', hexToRgbString(a));
+      if (persist) { localStorage.setItem('musicGraphTheme','custom'); localStorage.setItem('musicGraphThemeCustom', JSON.stringify({a,b})); }
+    }
+
+    function setGlassStrength(value, persist=true) {
+      const n=Math.max(20,Math.min(90,Number(value)||62));
+      const root=document.documentElement;
+      root.style.setProperty('--glass-alpha', (n/100).toFixed(2));
+      root.style.setProperty('--glass-alpha-soft', Math.max(.22,n/100-.14).toFixed(2));
+      root.style.setProperty('--glass-blur', `${Math.round(16+n*.23)}px`);
+      const label=document.getElementById('glass-strength-label');
+      if (label) label.textContent=n<40?'Suave':n<70?'Médio':'Forte';
+      const slider=document.getElementById('glass-strength'); if (slider) slider.value=n;
+      if (persist) localStorage.setItem('musicGraphGlassStrength', String(n));
+    }
+
+    function restoreThemeSettings() {
+      const customRaw=localStorage.getItem('musicGraphThemeCustom');
+      if (customRaw) { try { const c=JSON.parse(customRaw); if(c.a) document.getElementById('theme-custom-a').value=c.a; if(c.b) document.getElementById('theme-custom-b').value=c.b; } catch(_){} }
+      applyTheme(localStorage.getItem('musicGraphTheme') || 'aurora', false);
+      setGlassStrength(localStorage.getItem('musicGraphGlassStrength') || 62, false);
+    }
+
     // --- D3 GRAPH GLOBALS ---
     let svg, g, svgDefs, simulation, linkSelection, nodeSelection, zoomBehavior;
     let selectedNode = null;
@@ -1608,6 +1709,7 @@
     let supportsAlbumField = true;
 
     window.addEventListener('DOMContentLoaded', async () => {
+      restoreThemeSettings();
       lucide.createIcons();
       await refreshAdminSession();
       db.auth.onAuthStateChange(() => setTimeout(refreshAdminSession, 0));
@@ -2052,33 +2154,79 @@
       const performerIds = link.artists.map(a => typeof a === 'object' ? a.id : a);
       const primaryIds = new Set(link.primaryArtists || []);
       const allCreditIds = Object.keys(link.credits || {});
-      const orderedCreditIds = [
-        ...performerIds,
-        ...allCreditIds.filter(id => !performerIds.includes(id))
-      ];
       const primaryWarning = document.getElementById('link-primary-warning');
       if (performerIds.length && primaryIds.size === 0) primaryWarning.classList.remove('hidden');
       else primaryWarning.classList.add('hidden');
 
-      orderedCreditIds.forEach(id => {
+      const roleLabels = {
+        performance: 'Intérpretes',
+        production: 'Produção',
+        composition: 'Composição',
+        lyrics: 'Letra',
+        arrangement: 'Arranjo'
+      };
+      const roleAccent = {
+        performance: 'text-brand-pink',
+        production: 'text-brand-cyan',
+        composition: 'text-brand-accent',
+        lyrics: 'text-pink-300',
+        arrangement: 'text-cyan-200'
+      };
+      const groupedCredits = {
+        performance: [], production: [], composition: [], lyrics: [], arrangement: []
+      };
+
+      allCreditIds.forEach(id => {
         const artist = graphData.nodes.find(n => n.id === id);
         const name = artist ? artist.name : id;
-        const roles = (link.credits && link.credits[id]) || ['performance'];
-        const isPerformer = roles.includes('performance');
-        const isPrimary = isPerformer && primaryIds.has(id);
-        if (isPerformer) artistNames.push(name);
-        const roleLabels = { performance: 'Interpretação', production: 'Produção', composition: 'Composição', lyrics: 'Letra', arrangement: 'Arranjo' };
-        const typeLabel = isPerformer ? (isPrimary ? 'Artista' : 'Colaboração') : 'Crédito';
-        const typeClass = isPrimary ? 'text-brand-pink' : (isPerformer ? 'text-brand-accent' : 'text-brand-cyan');
-        const row = document.createElement('div');
-        row.className = 'grid grid-cols-[92px_1fr] gap-3 items-start bg-gray-950/50 border border-gray-800 rounded p-2.5';
-        row.innerHTML = `
-          <div class="text-[10px] uppercase tracking-wider font-semibold ${typeClass}">${typeLabel}</div>
-          <div class="min-w-0">
-            <div class="font-semibold text-gray-100">${name}</div>
-            <div class="text-[10px] text-gray-500 mt-0.5">${roles.map(r => roleLabels[r] || r).join(' · ')}</div>
-          </div>`;
-        artistContainer.appendChild(row);
+        const roles = (link.credits && link.credits[id]) || [];
+        roles.forEach(role => {
+          if (groupedCredits[role]) groupedCredits[role].push({ id, name, isPrimary: primaryIds.has(id) });
+        });
+      });
+
+      performerIds.forEach(id => {
+        const artist = graphData.nodes.find(n => n.id === id);
+        if (artist) artistNames.push(artist.name);
+      });
+
+      const summary = document.getElementById('link-credit-summary');
+      const summaryParts = [
+        groupedCredits.performance.length ? `${groupedCredits.performance.length} intérprete${groupedCredits.performance.length > 1 ? 's' : ''}` : '',
+        groupedCredits.production.length ? `${groupedCredits.production.length} produção` : '',
+        groupedCredits.composition.length ? `${groupedCredits.composition.length} composição` : '',
+        groupedCredits.lyrics.length ? `${groupedCredits.lyrics.length} letra` : '',
+        groupedCredits.arrangement.length ? `${groupedCredits.arrangement.length} arranjo` : ''
+      ].filter(Boolean);
+      if (summaryParts.length) {
+        summary.textContent = summaryParts.join(' · ');
+        summary.classList.remove('hidden');
+      } else {
+        summary.textContent = '';
+        summary.classList.add('hidden');
+      }
+
+      ['performance','production','composition','lyrics','arrangement'].forEach(role => {
+        const people = groupedCredits[role];
+        if (!people.length) return;
+        const section = document.createElement('section');
+        section.className = 'space-y-2';
+        section.innerHTML = `<div class="text-[10px] uppercase tracking-[.16em] font-semibold ${roleAccent[role]}">${roleLabels[role]}</div>`;
+        const list = document.createElement('div');
+        list.className = 'space-y-2';
+        people.forEach(person => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between gap-3 bg-gray-950/50 border border-gray-800 rounded p-2.5';
+          row.innerHTML = `
+            <div class="min-w-0">
+              <div class="font-semibold text-gray-100 truncate">${escapeHtml(person.name)}</div>
+              ${role === 'performance' && person.isPrimary ? '<div class="text-[10px] text-amber-300 mt-0.5">Artista principal</div>' : ''}
+            </div>
+            ${role === 'performance' && !person.isPrimary ? '<span class="text-[10px] text-gray-500">Colaboração</span>' : ''}`;
+          list.appendChild(row);
+        });
+        section.appendChild(list);
+        artistContainer.appendChild(section);
       });
       lucide.createIcons();
       renderEditLinkCredits(link);
@@ -2349,22 +2497,49 @@
 
         const oldIds = Object.keys(selectedLink.credits || {});
         const newIds = Object.keys(credits);
-        const rows = Object.entries(credits).map(([artist_id, roles]) => ({ collaboration_id: selectedLink.dbId, artist_id, roles, is_primary: primaryIds.includes(artist_id) }));
-        if (rows.length) {
-          const { error: creditError } = await db.from('collaboration_artists').upsert(rows, { onConflict: 'collaboration_id,artist_id' });
+        const rows = Object.entries(credits).map(([artist_id, roles]) => ({
+          collaboration_id: selectedLink.dbId,
+          artist_id,
+          roles: [...new Set(roles)],
+          is_primary: primaryIds.includes(artist_id)
+        }));
+
+        // Sincroniza cada crédito explicitamente. Isso evita depender de um upsert em lote
+        // para misturar linhas novas e existentes no relacionamento.
+        for (const row of rows) {
+          const existed = oldIds.includes(row.artist_id);
+          const query = existed
+            ? db.from('collaboration_artists').update({ roles: row.roles, is_primary: row.is_primary })
+                .eq('collaboration_id', row.collaboration_id).eq('artist_id', row.artist_id)
+            : db.from('collaboration_artists').insert(row);
+          const { error: creditError } = await query;
           if (creditError) throw creditError;
         }
+
         const removedIds = oldIds.filter(id => !newIds.includes(id));
         if (removedIds.length) {
-          const { error: deleteCreditError } = await db.from('collaboration_artists').delete().eq('collaboration_id', selectedLink.dbId).in('artist_id', removedIds);
+          const { error: deleteCreditError } = await db.from('collaboration_artists')
+            .delete().eq('collaboration_id', selectedLink.dbId).in('artist_id', removedIds);
           if (deleteCreditError) throw deleteCreditError;
         }
 
+        // Confirma no banco que todos os créditos acabaram de ser persistidos.
+        const { data: savedCredits, error: verifyError } = await db.from('collaboration_artists')
+          .select('artist_id,roles,is_primary')
+          .eq('collaboration_id', selectedLink.dbId);
+        if (verifyError) throw verifyError;
+        const savedMap = Object.fromEntries((savedCredits || []).map(r => [r.artist_id, r.roles || []]));
+        const missing = rows.filter(row => {
+          const savedRoles = savedMap[row.artist_id] || [];
+          return row.roles.some(role => !savedRoles.includes(role));
+        });
+        if (missing.length) throw new Error('Alguns créditos não foram confirmados após o salvamento.');
+
         await loadDataFromSupabase();
         updateGraph();
-        const refreshed = graphData.links.find(l => l.dbId === selectedLink.dbId);
+        const refreshed = graphData.links.find(l => Number(l.dbId) === Number(selectedLink.dbId));
         if (refreshed) selectLink(refreshed);
-        showToast('Colaboração atualizada!');
+        showToast('Faixa e créditos atualizados!');
       } catch (error) {
         console.error(error);
         alert('Erro ao atualizar colaboração: ' + (error.message || error));
@@ -2644,11 +2819,29 @@
         const collabPayload = supportsAlbumField ? { ...commonPayload, album: album || null } : commonPayload;
         const { data: collab, error } = await db.from('collaborations').insert(collabPayload).select('id').single();
         if (error) throw error;
-        const creditRows = allCreditEntries.map(([artist_id, roles]) => ({ collaboration_id: collab.id, artist_id, roles, is_primary: primaryIds.includes(artist_id) }));
+        const creditRows = allCreditEntries.map(([artist_id, roles]) => ({
+          collaboration_id: collab.id,
+          artist_id,
+          roles: [...new Set(roles)],
+          is_primary: primaryIds.includes(artist_id)
+        }));
         const { error: bridgeError } = await db.from('collaboration_artists').insert(creditRows);
         if (bridgeError) {
           await db.from('collaborations').delete().eq('id', collab.id);
           throw bridgeError;
+        }
+        const { data: insertedCredits, error: verifyCreditError } = await db.from('collaboration_artists')
+          .select('artist_id,roles,is_primary').eq('collaboration_id', collab.id);
+        if (verifyCreditError) throw verifyCreditError;
+        const insertedMap = Object.fromEntries((insertedCredits || []).map(r => [r.artist_id, r.roles || []]));
+        const missingInserted = creditRows.filter(row => {
+          const savedRoles = insertedMap[row.artist_id] || [];
+          return row.roles.some(role => !savedRoles.includes(role));
+        });
+        if (missingInserted.length) {
+          await db.from('collaboration_artists').delete().eq('collaboration_id', collab.id);
+          await db.from('collaborations').delete().eq('id', collab.id);
+          throw new Error('Nem todos os créditos foram confirmados após o cadastro.');
         }
         await loadDataFromSupabase();
         updateGraph();
@@ -2670,7 +2863,7 @@
           document.getElementById(`link-artist${slot}-arrangement`).checked = false;
         });
         refreshExtraCreditOptions();
-        showToast("Colaboração e créditos salvos permanentemente!");
+        showToast("Faixa e créditos salvos permanentemente!");
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar colaboração: ' + (error.message || error));
