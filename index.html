@@ -2522,7 +2522,6 @@
         const { error: collabError } = await db.from('collaborations').update(collabPayload).eq('id', selectedLink.dbId);
         if (collabError) throw collabError;
 
-        const oldIds = Object.keys(selectedLink.credits || {});
         const newIds = Object.keys(credits);
         const rows = Object.entries(credits).map(([artist_id, roles]) => ({
           collaboration_id: selectedLink.dbId,
@@ -2531,16 +2530,34 @@
           is_primary: primaryIds.includes(artist_id)
         }));
 
-        // Insere novos artistas e atualiza os existentes usando a chave composta
-        // (collaboration_id, artist_id). Assim feat e créditos usam exatamente o mesmo fluxo.
-        const { error: upsertCreditsError } = await db.from('collaboration_artists')
-          .upsert(rows, { onConflict: 'collaboration_id,artist_id' });
-        if (upsertCreditsError) throw upsertCreditsError;
+        // Lê o estado real do banco antes de salvar. Mantemos a lógica simples:
+        // atualiza quem já existe, insere quem é novo e remove quem saiu da faixa.
+        const { data: currentCreditRows, error: currentCreditError } = await db.from('collaboration_artists')
+          .select('artist_id')
+          .eq('collaboration_id', selectedLink.dbId);
+        if (currentCreditError) throw currentCreditError;
+        const currentIds = new Set((currentCreditRows || []).map(row => row.artist_id));
 
-        const removedIds = oldIds.filter(id => !newIds.includes(id));
+        for (const row of rows) {
+          if (currentIds.has(row.artist_id)) {
+            const { error: updateCreditError } = await db.from('collaboration_artists')
+              .update({ roles: row.roles, is_primary: row.is_primary })
+              .eq('collaboration_id', selectedLink.dbId)
+              .eq('artist_id', row.artist_id);
+            if (updateCreditError) throw updateCreditError;
+          } else {
+            const { error: insertCreditError } = await db.from('collaboration_artists')
+              .insert(row);
+            if (insertCreditError) throw insertCreditError;
+          }
+        }
+
+        const removedIds = [...currentIds].filter(id => !newIds.includes(id));
         if (removedIds.length) {
           const { error: deleteCreditError } = await db.from('collaboration_artists')
-            .delete().eq('collaboration_id', selectedLink.dbId).in('artist_id', removedIds);
+            .delete()
+            .eq('collaboration_id', selectedLink.dbId)
+            .in('artist_id', removedIds);
           if (deleteCreditError) throw deleteCreditError;
         }
 
