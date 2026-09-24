@@ -497,15 +497,18 @@
                 <div id="edit-link-credits-list" class="space-y-2"></div>
               </div>
               <div class="pt-2 border-t border-gray-800 space-y-2">
-                <label class="text-xs text-gray-400 block">Adicionar outro artista aos créditos</label>
+                <label class="text-xs text-gray-400 block">Adicionar artista à faixa</label>
+                <p class="text-[10px] text-gray-500">Pode ser feat/intérprete ou participar apenas dos créditos.</p>
                 <select id="edit-link-add-credit-artist" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-brand-cyan"></select>
                 <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
-                  <label class="flex items-center gap-1"><input id="edit-add-credit-production" type="checkbox" checked> Produção</label>
+                  <label class="flex items-center gap-1 text-amber-300"><input id="edit-add-credit-primary" type="checkbox" disabled> Artista principal</label>
+                  <label class="flex items-center gap-1"><input id="edit-add-credit-performance" type="checkbox" onchange="syncNewCreditPrimaryState()"> Interpretação / feat</label>
+                  <label class="flex items-center gap-1"><input id="edit-add-credit-production" type="checkbox"> Produção</label>
                   <label class="flex items-center gap-1"><input id="edit-add-credit-composition" type="checkbox"> Composição</label>
                   <label class="flex items-center gap-1"><input id="edit-add-credit-lyrics" type="checkbox"> Letra</label>
                   <label class="flex items-center gap-1"><input id="edit-add-credit-arrangement" type="checkbox"> Arranjo</label>
                 </div>
-                <button type="button" onclick="addCreditArtistToEditForm()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] py-1.5 rounded">Adicionar aos créditos</button>
+                <button type="button" onclick="addCreditArtistToEditForm()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] py-1.5 rounded">Adicionar artista</button>
               </div>
               <div class="flex gap-2">
                 <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar faixa</button>
@@ -941,7 +944,7 @@
     }
     function clearGlobalSearch() { const i=document.getElementById('global-search'); const o=document.getElementById('global-search-results'); if(i)i.value=''; if(o){o.classList.add('hidden');o.innerHTML='';} }
     function globalOpenArtist(id){ clearGlobalSearch(); showGraphView(); const n=graphData.nodes.find(x=>x.id===id); if(n)selectNode(n); }
-    function globalOpenTrack(id){ clearGlobalSearch(); showGraphView(); const l=graphData.links.find(x=>Number(x.dbId)===Number(id)); if(l)selectLink(l); }
+    function globalOpenTrack(id){ clearGlobalSearch(); showGraphView(); const l=graphData.links.find(x=>Number(x.dbId)===Number(id)); if(l){ openDetailsDrawer(); selectLink(l); } }
     function globalOpenAlbum(encoded){ const name=decodeURIComponent(encoded); clearGlobalSearch(); openExplorerSection('catalog'); const type=document.getElementById('catalog-type'); const search=document.getElementById('catalog-search'); if(type)type.value='albums'; if(search)search.value=name; renderCatalog(); }
     document.addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k') { e.preventDefault(); document.getElementById('global-search')?.focus(); } if (e.key==='Escape') { clearGlobalSearch(); closeDetailsDrawer(); } });
     document.addEventListener('click', e => { const shell=e.target.closest?.('.mg-search-shell'); if(!shell) document.getElementById('global-search-results')?.classList.add('hidden'); });
@@ -2081,6 +2084,7 @@
     }
 
     function selectLink(link, backArtistId = null) {
+      openDetailsDrawer();
       selectedLink = link;
       selectedNode = null;
       linkBackArtistId = backArtistId;
@@ -2372,7 +2376,7 @@
         row.innerHTML = `
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="text-xs font-semibold text-gray-200">${name}</div>
-            ${!roles.includes('performance') ? `<button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover crédito</button>` : ''}
+            <button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover</button>
           </div>
           <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
             <label class="flex items-center gap-1 text-amber-300"><input data-artist-id="${id}" class="edit-link-primary" type="checkbox" ${isPrimary ? 'checked' : ''} ${roles.includes('performance') ? '' : 'disabled'}> Artista principal</label>
@@ -2412,35 +2416,58 @@
       select.innerHTML = '<option value="">Selecione...</option>' + options;
     }
 
+    function syncNewCreditPrimaryState() {
+      const performance = document.getElementById('edit-add-credit-performance');
+      const primary = document.getElementById('edit-add-credit-primary');
+      if (!performance || !primary) return;
+      primary.disabled = !performance.checked;
+      if (!performance.checked) primary.checked = false;
+    }
+
     function addCreditArtistToEditForm() {
       const select = document.getElementById('edit-link-add-credit-artist');
       const id = select?.value;
       if (!id) return;
-      const production = document.getElementById('edit-add-credit-production').checked;
-      const composition = document.getElementById('edit-add-credit-composition').checked;
-      const lyrics = document.getElementById('edit-add-credit-lyrics').checked;
-      const arrangement = document.getElementById('edit-add-credit-arrangement').checked;
-      if (!production && !composition && !lyrics && !arrangement) return alert('Marque ao menos um crédito.');
+      const performance = document.getElementById('edit-add-credit-performance')?.checked || false;
+      const production = document.getElementById('edit-add-credit-production')?.checked || false;
+      const composition = document.getElementById('edit-add-credit-composition')?.checked || false;
+      const lyrics = document.getElementById('edit-add-credit-lyrics')?.checked || false;
+      const arrangement = document.getElementById('edit-add-credit-arrangement')?.checked || false;
+      const isPrimary = performance && (document.getElementById('edit-add-credit-primary')?.checked || false);
+      if (!performance && !production && !composition && !lyrics && !arrangement) return alert('Marque ao menos uma função para o artista.');
+
       const artist = graphData.nodes.find(n => n.id === id);
       const container = document.getElementById('edit-link-credits-list');
-      const roles = [...(production ? ['production'] : []), ...(composition ? ['composition'] : []), ...(lyrics ? ['lyrics'] : []), ...(arrangement ? ['arrangement'] : [])];
+      const roles = [
+        ...(performance ? ['performance'] : []),
+        ...(production ? ['production'] : []),
+        ...(composition ? ['composition'] : []),
+        ...(lyrics ? ['lyrics'] : []),
+        ...(arrangement ? ['arrangement'] : [])
+      ];
       const row = document.createElement('div');
       row.className = 'edit-credit-row bg-gray-900/80 border border-gray-800 rounded p-2';
       row.dataset.artistId = id;
       row.innerHTML = `
         <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="text-xs font-semibold text-gray-200">${artist?.name || id}</div>
-          <button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover crédito</button>
+          <div class="text-xs font-semibold text-gray-200">${escapeHtml(artist?.name || id)}</div>
+          <button type="button" onclick="removeCreditArtistFromEditForm('${id}')" class="text-[10px] text-red-400 hover:text-red-300">Remover</button>
         </div>
         <div class="flex flex-wrap gap-3 text-[11px] text-gray-400">
-          <label class="flex items-center gap-1 text-amber-300"><input data-artist-id="${id}" class="edit-link-primary" type="checkbox" disabled> Artista principal</label>
-          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="production" class="edit-link-role" type="checkbox" ${roles.includes('production') ? 'checked' : ''}> Produção</label>
-          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="composition" class="edit-link-role" type="checkbox" ${roles.includes('composition') ? 'checked' : ''}> Composição</label>
-          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="lyrics" class="edit-link-role" type="checkbox" ${roles.includes('lyrics') ? 'checked' : ''}> Letra</label>
-          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="arrangement" class="edit-link-role" type="checkbox" ${roles.includes('arrangement') ? 'checked' : ''}> Arranjo</label>
+          <label class="flex items-center gap-1 text-amber-300"><input data-artist-id="${id}" class="edit-link-primary" type="checkbox" ${isPrimary ? 'checked' : ''} ${performance ? '' : 'disabled'}> Artista principal</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="performance" class="edit-link-role" type="checkbox" ${performance ? 'checked' : ''} onchange="syncEditPrimaryForRow(this)"> Interpretação</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="production" class="edit-link-role" type="checkbox" ${production ? 'checked' : ''}> Produção</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="composition" class="edit-link-role" type="checkbox" ${composition ? 'checked' : ''}> Composição</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="lyrics" class="edit-link-role" type="checkbox" ${lyrics ? 'checked' : ''}> Letra</label>
+          <label class="flex items-center gap-1"><input data-artist-id="${id}" data-role="arrangement" class="edit-link-role" type="checkbox" ${arrangement ? 'checked' : ''}> Arranjo</label>
         </div>`;
       container.appendChild(row);
       select.value = '';
+      ['performance','production','composition','lyrics','arrangement','primary'].forEach(key => {
+        const el = document.getElementById(`edit-add-credit-${key}`);
+        if (el) el.checked = false;
+      });
+      syncNewCreditPrimaryState();
       refreshEditAdditionalCreditOptions();
     }
 
@@ -2504,17 +2531,11 @@
           is_primary: primaryIds.includes(artist_id)
         }));
 
-        // Sincroniza cada crédito explicitamente. Isso evita depender de um upsert em lote
-        // para misturar linhas novas e existentes no relacionamento.
-        for (const row of rows) {
-          const existed = oldIds.includes(row.artist_id);
-          const query = existed
-            ? db.from('collaboration_artists').update({ roles: row.roles, is_primary: row.is_primary })
-                .eq('collaboration_id', row.collaboration_id).eq('artist_id', row.artist_id)
-            : db.from('collaboration_artists').insert(row);
-          const { error: creditError } = await query;
-          if (creditError) throw creditError;
-        }
+        // Insere novos artistas e atualiza os existentes usando a chave composta
+        // (collaboration_id, artist_id). Assim feat e créditos usam exatamente o mesmo fluxo.
+        const { error: upsertCreditsError } = await db.from('collaboration_artists')
+          .upsert(rows, { onConflict: 'collaboration_id,artist_id' });
+        if (upsertCreditsError) throw upsertCreditsError;
 
         const removedIds = oldIds.filter(id => !newIds.includes(id));
         if (removedIds.length) {
@@ -2523,17 +2544,20 @@
           if (deleteCreditError) throw deleteCreditError;
         }
 
-        // Confirma no banco que todos os créditos acabaram de ser persistidos.
+        // Releitura obrigatória: só mostramos sucesso se o banco devolver as mesmas funções.
         const { data: savedCredits, error: verifyError } = await db.from('collaboration_artists')
           .select('artist_id,roles,is_primary')
           .eq('collaboration_id', selectedLink.dbId);
         if (verifyError) throw verifyError;
-        const savedMap = Object.fromEntries((savedCredits || []).map(r => [r.artist_id, r.roles || []]));
-        const missing = rows.filter(row => {
-          const savedRoles = savedMap[row.artist_id] || [];
-          return row.roles.some(role => !savedRoles.includes(role));
+        const savedMap = Object.fromEntries((savedCredits || []).map(r => [r.artist_id, { roles: r.roles || [], isPrimary: !!r.is_primary }]));
+        const mismatches = rows.filter(row => {
+          const saved = savedMap[row.artist_id];
+          if (!saved) return true;
+          const expectedRoles = [...row.roles].sort();
+          const actualRoles = [...saved.roles].sort();
+          return expectedRoles.join('|') !== actualRoles.join('|') || saved.isPrimary !== row.is_primary;
         });
-        if (missing.length) throw new Error('Alguns créditos não foram confirmados após o salvamento.');
+        if (mismatches.length) throw new Error('O banco não confirmou todos os créditos da faixa.');
 
         await loadDataFromSupabase();
         updateGraph();
