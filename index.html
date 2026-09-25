@@ -221,6 +221,12 @@
     .mg-liquid-panel { background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important; border:1px solid rgba(255,255,255,.12) !important; box-shadow:0 18px 52px rgba(11,17,34,.18), inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter:blur(22px) saturate(160%); }
     .participant-pill { background:linear-gradient(180deg, rgba(34,211,238,.16), rgba(139,92,246,.14)); border:1px solid rgba(103,232,249,.18); }
     .mg-settings-overlay { position:fixed; inset:0; z-index:90; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.52); backdrop-filter:blur(18px); }
+    .mg-add-overlay { position:fixed; inset:0; z-index:91; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.52); backdrop-filter:blur(18px); }
+    .mg-add-overlay.hidden { display:none !important; }
+    .mg-add-card { width:min(620px, calc(100vw - 24px)); max-height:min(88vh, 900px); display:flex; flex-direction:column; border:1px solid var(--mg-border); border-radius:24px; overflow:hidden; background:linear-gradient(180deg, rgba(18,24,44,.94), rgba(10,15,30,.95)); box-shadow:0 32px 100px rgba(0,0,0,.52); backdrop-filter:blur(30px) saturate(165%); }
+    .mg-add-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--mg-border); }
+    #add-module-host { overflow-y:auto; padding:16px; }
+    #add-module-host #tab-add { display:block !important; }
     .mg-settings-overlay.hidden { display:none !important; }
     .mg-edit-overlay { position:fixed; inset:0; z-index:92; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.58); backdrop-filter:blur(18px); }
     .mg-edit-overlay.hidden { display:none !important; }
@@ -295,6 +301,19 @@
     <span id="toast-msg">Ação realizada com sucesso!</span>
   </div>
 
+  <div id="add-overlay" class="mg-add-overlay hidden" onclick="if(event.target===this) closeAddModule()">
+    <section class="mg-add-card" role="dialog" aria-modal="true" aria-labelledby="add-module-title">
+      <div class="mg-add-header">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-cyan-400/10 border border-cyan-300/10 grid place-items-center"><i data-lucide="plus-circle" class="w-4 h-4 text-cyan-300"></i></span>
+          <div><div class="text-[10px] uppercase tracking-[.18em] text-gray-500">Cadastro</div><h2 id="add-module-title" class="text-sm font-semibold text-white">Adicionar à teia</h2></div>
+        </div>
+        <button type="button" onclick="closeAddModule()" class="mg-icon-btn" title="Fechar"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div id="add-module-host" class="scrollbar-thin"></div>
+    </section>
+  </div>
+
   <div id="settings-overlay" class="mg-settings-overlay hidden" onclick="if(event.target===this) closeSettingsModule()">
     <section class="mg-settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-module-title">
       <div class="mg-settings-header">
@@ -341,7 +360,7 @@
         <i data-lucide="info" class="w-4 h-4"></i>
         <span>Detalhes</span>
       </button>
-      <button id="tab-add-btn" onclick="switchTab('add')" class="admin-only flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
+      <button id="tab-add-btn" onclick="openAddModule()" class="admin-only flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
         <i data-lucide="plus-circle" class="w-4 h-4"></i>
         <span>Adicionar</span>
       </button>
@@ -996,6 +1015,28 @@
       if (mode === 'za') return arr.sort((a,b) => (b.track||'').localeCompare(a.track||''));
       return arr.sort((a,b) => (b.year||0)-(a.year||0) || (a.track||'').localeCompare(b.track||''));
     }
+    function ensureAddModuleMounted() {
+      const add = document.getElementById('tab-add');
+      const host = document.getElementById('add-module-host');
+      if (add && host && add.parentElement !== host) {
+        host.appendChild(add);
+        add.classList.remove('hidden');
+      }
+    }
+
+    function openAddModule(mode=null) {
+      closeSettingsModule();
+      ensureAddModuleMounted();
+      showAddMode(mode);
+      document.getElementById('add-overlay')?.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAddModule() {
+      document.getElementById('add-overlay')?.classList.add('hidden');
+      showAddMode(null);
+    }
+
     function ensureSettingsModuleMounted() {
       const settings = document.getElementById('tab-settings');
       const host = document.getElementById('settings-module-host');
@@ -1006,6 +1047,7 @@
     }
 
     function openSettingsModule() {
+      closeAddModule();
       ensureSettingsModuleMounted();
       ensureEditTrackModuleMounted();
       document.getElementById('settings-overlay')?.classList.remove('hidden');
@@ -1117,9 +1159,9 @@
       if (loginPanel) loginPanel.classList.toggle('hidden', isAdmin);
       if (sessionPanel) sessionPanel.classList.toggle('hidden', !isAdmin);
       if (!isAdmin) {
-        const addTab = document.getElementById('tab-add');
         const genresTab = document.getElementById('tab-genres');
-        if ((addTab && !addTab.classList.contains('hidden')) || (genresTab && !genresTab.classList.contains('hidden'))) switchTab('info');
+        closeAddModule();
+        if (genresTab && !genresTab.classList.contains('hidden')) switchTab('info');
       }
       return isAdmin;
     }
@@ -3006,6 +3048,7 @@
         document.getElementById('new-artist-spotify-ref').value = '';
         document.getElementById('new-artist-image').value = '';
         showToast(spotifyData ? `"${artistName}" salvo via Spotify!` : `"${artistName}" salvo no banco.`);
+        closeAddModule();
       } catch (error) {
         console.error(error);
         alert('Erro ao salvar artista: ' + (error.message || error));
@@ -3484,7 +3527,8 @@
 
     function switchTab(tab) {
       if (tab === 'settings') { openSettingsModule(); return; }
-      ['info', 'add', 'genres'].forEach(t => {
+      if (tab === 'add') { openAddModule(); return; }
+      ['info', 'genres'].forEach(t => {
         document.getElementById(`tab-${t}`)?.classList.add('hidden');
         document.getElementById(`tab-${t}-btn`)?.classList.remove('border-brand-accent', 'text-brand-accent');
         document.getElementById(`tab-${t}-btn`)?.classList.add('border-transparent');
@@ -3492,7 +3536,6 @@
 
       document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
       document.getElementById(`tab-${tab}-btn`)?.classList.add('border-brand-accent', 'text-brand-accent');
-      if (tab === 'add') showAddMode(null);
     }
 
     function handleSearch() {
