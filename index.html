@@ -220,6 +220,16 @@
 
     .mg-liquid-panel { background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045)) !important; border:1px solid rgba(255,255,255,.12) !important; box-shadow:0 18px 52px rgba(11,17,34,.18), inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter:blur(22px) saturate(160%); }
     .participant-pill { background:linear-gradient(180deg, rgba(34,211,238,.16), rgba(139,92,246,.14)); border:1px solid rgba(103,232,249,.18); }
+    .mg-settings-overlay { position:fixed; inset:0; z-index:90; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.52); backdrop-filter:blur(18px); }
+    .mg-settings-overlay.hidden { display:none !important; }
+    .mg-settings-card { width:min(560px, calc(100vw - 24px)); max-height:min(82vh, 820px); display:flex; flex-direction:column; border:1px solid var(--mg-border); border-radius:24px; overflow:hidden; background:linear-gradient(180deg, rgba(18,24,44,.88), rgba(10,15,30,.90)); box-shadow:0 32px 100px rgba(0,0,0,.48); backdrop-filter:blur(30px) saturate(165%); }
+    .mg-settings-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--mg-border); }
+    #settings-module-host { overflow-y:auto; padding:16px; }
+    #settings-module-host #tab-settings { display:block !important; }
+    #link-details.link-edit-mode > div > *:not(#edit-link-form) { display:none !important; }
+    #link-details.link-edit-mode #edit-link-form { display:block !important; background:transparent !important; border:0 !important; padding:0 !important; }
+    .credit-artist-link { color:#f3f4f6; text-align:left; transition:color .15s ease; }
+    .credit-artist-link:hover { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; }
     @media (max-width: 860px) {
       .mg-topbar { height:58px; padding:0 10px; gap:8px; }
       .mg-brand-title { display:none; }
@@ -259,14 +269,27 @@
       <span class="hidden md:block absolute right-3 top-[10px] text-[10px] text-gray-600 border border-gray-800 rounded px-1.5 py-0.5">⌘ K</span>
       <div id="global-search-results" class="mg-search-results hidden scrollbar-thin"></div>
     </div>
-    <button class="mg-icon-btn" type="button" onclick="openSettingsDrawer()" title="Ajustes"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
-    <button class="mg-icon-btn" type="button" onclick="openAdminDrawer()" title="Administração"><i data-lucide="user-round" class="w-4 h-4"></i></button>
+    <button class="mg-icon-btn" type="button" onclick="openSettingsModule()" title="Ajustes"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i></button>
+    <button class="mg-icon-btn" type="button" onclick="openAdminModule()" title="Administração"><i data-lucide="user-round" class="w-4 h-4"></i></button>
   </header>
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-4 right-4 z-50 bg-brand-accent text-white px-4 py-2 rounded-lg shadow-lg hidden transition-opacity duration-300 flex items-center space-x-2 text-sm">
     <i data-lucide="check-circle" class="w-4 h-4"></i>
     <span id="toast-msg">Ação realizada com sucesso!</span>
+  </div>
+
+  <div id="settings-overlay" class="mg-settings-overlay hidden" onclick="if(event.target===this) closeSettingsModule()">
+    <section class="mg-settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-module-title">
+      <div class="mg-settings-header">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-white/[.05] border border-white/[.08] grid place-items-center"><i data-lucide="settings-2" class="w-4 h-4 text-violet-300"></i></span>
+          <div><div class="text-[10px] uppercase tracking-[.18em] text-gray-500">Preferências</div><h2 id="settings-module-title" class="text-sm font-semibold text-white">Ajustes e administração</h2></div>
+        </div>
+        <button type="button" onclick="closeSettingsModule()" class="mg-icon-btn" title="Fechar"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div id="settings-module-host" class="scrollbar-thin"></div>
+    </section>
   </div>
 
   <!-- Sidebar / Controls Panel -->
@@ -296,10 +319,6 @@
       <button id="tab-genres-btn" onclick="switchTab('genres')" class="admin-only flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
         <i data-lucide="palette" class="w-4 h-4"></i>
         <span>Gêneros</span>
-      </button>
-      <button id="tab-settings-btn" onclick="switchTab('settings')" class="flex-1 py-3 border-b-2 border-transparent hover:text-gray-200 flex items-center justify-center space-x-1">
-        <i data-lucide="sliders" class="w-4 h-4"></i>
-        <span>Ajustes</span>
       </button>
     </div>
 
@@ -461,7 +480,7 @@
               </a>
             </div>
 
-            <div class="admin-only flex justify-end"><button type="button" class="mg-edit-trigger" onclick="toggleAdminEditor('edit-link-form', this)"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Editar faixa</span></button></div>
+            <div class="admin-only flex justify-end"><button type="button" class="mg-edit-trigger" onclick="enterLinkEditMode()"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Editar faixa</span></button></div>
             <form id="edit-link-form" onsubmit="handleEditLink(event)" class="admin-only hidden space-y-3 bg-gray-950/60 p-3 rounded-lg border border-gray-800">
               <h3 class="text-xs font-semibold uppercase text-gray-400">Editar colaboração selecionada</h3>
               <div class="space-y-2 bg-gray-900/70 border border-gray-800 rounded p-2.5">
@@ -511,6 +530,7 @@
                 <button type="button" onclick="addCreditArtistToEditForm()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-[11px] py-1.5 rounded">Adicionar artista</button>
               </div>
               <div class="flex gap-2">
+                <button type="button" onclick="exitLinkEditMode()" class="bg-white/[.05] hover:bg-white/[.09] text-gray-300 text-xs py-1.5 px-3 rounded transition border border-white/[.08]">Cancelar</button>
                 <button type="submit" class="flex-1 bg-brand-cyan hover:bg-cyan-600 text-white text-xs py-1.5 rounded transition font-semibold">Salvar faixa</button>
                 <button type="button" onclick="deleteCurrentLink()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs py-1.5 px-3 rounded transition border border-red-500/30">Remover</button>
               </div>
@@ -898,8 +918,50 @@
       if (mode === 'za') return arr.sort((a,b) => (b.track||'').localeCompare(a.track||''));
       return arr.sort((a,b) => (b.year||0)-(a.year||0) || (a.track||'').localeCompare(b.track||''));
     }
-    function openSettingsDrawer() { openDetailsDrawer(); switchTab('settings'); }
-    function openAdminDrawer() { openDetailsDrawer(); switchTab('settings'); setTimeout(() => document.getElementById('admin-password-input')?.focus(), 120); }
+    function ensureSettingsModuleMounted() {
+      const settings = document.getElementById('tab-settings');
+      const host = document.getElementById('settings-module-host');
+      if (settings && host && settings.parentElement !== host) {
+        host.appendChild(settings);
+        settings.classList.remove('hidden');
+      }
+    }
+
+    function openSettingsModule() {
+      ensureSettingsModuleMounted();
+      document.getElementById('settings-overlay')?.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSettingsModule() {
+      document.getElementById('settings-overlay')?.classList.add('hidden');
+    }
+
+    function openAdminModule() {
+      openSettingsModule();
+      setTimeout(() => document.getElementById('admin-password-input')?.focus(), 120);
+    }
+
+    // Compatibilidade com chamadas antigas.
+    function openSettingsDrawer() { openSettingsModule(); }
+    function openAdminDrawer() { openAdminModule(); }
+
+    function enterLinkEditMode() {
+      if (!selectedLink) return;
+      const panel = document.getElementById('link-details');
+      const form = document.getElementById('edit-link-form');
+      if (!panel || !form) return;
+      renderEditLinkCredits(selectedLink);
+      panel.classList.add('link-edit-mode');
+      form.classList.remove('hidden');
+      panel.closest('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function exitLinkEditMode() {
+      document.getElementById('link-details')?.classList.remove('link-edit-mode');
+      document.getElementById('edit-link-form')?.classList.add('hidden');
+    }
     function setTopNav(id) {
       document.querySelectorAll('.mg-nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(id)?.classList.add('active');
@@ -2084,6 +2146,7 @@
     }
 
     function selectLink(link, backArtistId = null) {
+      exitLinkEditMode();
       openDetailsDrawer();
       selectedLink = link;
       selectedNode = null;
@@ -2223,7 +2286,7 @@
           row.className = 'flex items-center justify-between gap-3 bg-gray-950/50 border border-gray-800 rounded p-2.5';
           row.innerHTML = `
             <div class="min-w-0">
-              <div class="font-semibold text-gray-100 truncate">${escapeHtml(person.name)}</div>
+              <button type="button" class="credit-artist-link font-semibold truncate max-w-full" onclick="openArtistFromTrack('${person.id}')">${escapeHtml(person.name)}</button>
               ${role === 'performance' && person.isPrimary ? '<div class="text-[10px] text-amber-300 mt-0.5">Artista principal</div>' : ''}
             </div>
             ${role === 'performance' && !person.isPrimary ? '<span class="text-[10px] text-gray-500">Colaboração</span>' : ''}`;
@@ -2240,6 +2303,13 @@
       spotifyBtn.href = link.spotifyUrl || `https://open.spotify.com/search/${searchQuery}`;
 
       switchTab('info');
+    }
+
+    function openArtistFromTrack(artistId) {
+      const artist = graphData.nodes.find(n => n.id === artistId);
+      if (!artist) return;
+      exitLinkEditMode();
+      selectNode(artist);
     }
 
     function goBackToArtist() {
@@ -3289,14 +3359,15 @@
     }
 
     function switchTab(tab) {
-      ['info', 'add', 'genres', 'settings'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}-btn`).classList.remove('border-brand-accent', 'text-brand-accent');
-        document.getElementById(`tab-${t}-btn`).classList.add('border-transparent');
+      if (tab === 'settings') { openSettingsModule(); return; }
+      ['info', 'add', 'genres'].forEach(t => {
+        document.getElementById(`tab-${t}`)?.classList.add('hidden');
+        document.getElementById(`tab-${t}-btn`)?.classList.remove('border-brand-accent', 'text-brand-accent');
+        document.getElementById(`tab-${t}-btn`)?.classList.add('border-transparent');
       });
 
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-${tab}-btn`).classList.add('border-brand-accent', 'text-brand-accent');
+      document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
+      document.getElementById(`tab-${tab}-btn`)?.classList.add('border-brand-accent', 'text-brand-accent');
     }
 
     function handleSearch() {
@@ -3339,6 +3410,10 @@
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 3000);
     }
-  </script>
+  
+    document.addEventListener('DOMContentLoaded', () => {
+      ensureSettingsModuleMounted();
+    });
+</script>
 </body>
 </html>
