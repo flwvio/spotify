@@ -222,14 +222,30 @@
     .participant-pill { background:linear-gradient(180deg, rgba(34,211,238,.16), rgba(139,92,246,.14)); border:1px solid rgba(103,232,249,.18); }
     .mg-settings-overlay { position:fixed; inset:0; z-index:90; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.52); backdrop-filter:blur(18px); }
     .mg-settings-overlay.hidden { display:none !important; }
+    .mg-edit-overlay { position:fixed; inset:0; z-index:92; display:grid; place-items:center; padding:18px; background:rgba(5,8,18,.58); backdrop-filter:blur(18px); }
+    .mg-edit-overlay.hidden { display:none !important; }
+    .mg-edit-card { width:min(620px, calc(100vw - 24px)); max-height:min(88vh, 900px); display:flex; flex-direction:column; border:1px solid var(--mg-border); border-radius:24px; overflow:hidden; background:linear-gradient(180deg, rgba(18,24,44,.94), rgba(10,15,30,.95)); box-shadow:0 32px 100px rgba(0,0,0,.52); backdrop-filter:blur(30px) saturate(165%); }
+    .mg-edit-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--mg-border); }
+    #edit-track-module-host { overflow-y:auto; padding:16px; }
+    #edit-track-module-host #edit-link-form { display:block !important; background:transparent !important; border:0 !important; padding:0 !important; }
     .mg-settings-card { width:min(560px, calc(100vw - 24px)); max-height:min(82vh, 820px); display:flex; flex-direction:column; border:1px solid var(--mg-border); border-radius:24px; overflow:hidden; background:linear-gradient(180deg, rgba(18,24,44,.88), rgba(10,15,30,.90)); box-shadow:0 32px 100px rgba(0,0,0,.48); backdrop-filter:blur(30px) saturate(165%); }
     .mg-settings-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--mg-border); }
     #settings-module-host { overflow-y:auto; padding:16px; }
     #settings-module-host #tab-settings { display:block !important; }
-    #link-details.link-edit-mode > div > *:not(#edit-link-form) { display:none !important; }
-    #link-details.link-edit-mode #edit-link-form { display:block !important; background:transparent !important; border:0 !important; padding:0 !important; }
     .credit-artist-link { color:#f3f4f6; text-align:left; transition:color .15s ease; }
     .credit-artist-link:hover { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; }
+    .album-link { color:#e5e7eb; text-align:left; transition:color .15s ease; cursor:pointer; }
+    .album-link:hover { color:#a78bfa; text-decoration:underline; text-underline-offset:3px; }
+    .mg-add-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .mg-add-choice { text-align:left; padding:14px; border-radius:16px; border:1px solid var(--mg-border); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035)); transition:.18s ease; }
+    .mg-add-choice:hover { transform:translateY(-1px); border-color:rgba(167,139,250,.34); background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.05)); }
+    .mg-add-choice-icon { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; margin-bottom:10px; background:rgba(139,92,246,.13); border:1px solid rgba(139,92,246,.18); }
+    .mg-add-back { display:flex; align-items:center; gap:6px; color:#aab2c3; font-size:11px; margin-bottom:10px; }
+    .mg-collaborators-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .mg-collaborator-card { min-width:0; padding:10px 6px; border-radius:14px; border:1px solid var(--mg-border); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035)); text-align:center; transition:.18s ease; }
+    .mg-collaborator-card:hover { transform:translateY(-2px); border-color:rgba(167,139,250,.30); }
+    .mg-collaborator-avatar { width:52px; height:52px; margin:0 auto 7px; border-radius:999px; background:rgba(255,255,255,.04) center/cover no-repeat; border:2px solid rgba(255,255,255,.08); display:grid; place-items:center; font-weight:700; }
+
     @media (max-width: 860px) {
       .mg-topbar { height:58px; padding:0 10px; gap:8px; }
       .mg-brand-title { display:none; }
@@ -289,6 +305,19 @@
         <button type="button" onclick="closeSettingsModule()" class="mg-icon-btn" title="Fechar"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <div id="settings-module-host" class="scrollbar-thin"></div>
+    </section>
+  </div>
+
+  <div id="edit-track-overlay" class="mg-edit-overlay hidden" onclick="if(event.target===this) exitLinkEditMode()">
+    <section class="mg-edit-card" role="dialog" aria-modal="true" aria-labelledby="edit-track-module-title">
+      <div class="mg-edit-header">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-cyan-400/10 border border-cyan-300/10 grid place-items-center flex-none"><i data-lucide="pencil-line" class="w-4 h-4 text-cyan-300"></i></span>
+          <div class="min-w-0"><div class="text-[10px] uppercase tracking-[.18em] text-gray-500">Edição</div><h2 id="edit-track-module-title" class="text-sm font-semibold text-white truncate">Editar faixa</h2></div>
+        </div>
+        <button type="button" onclick="exitLinkEditMode()" class="mg-icon-btn" title="Fechar"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div id="edit-track-module-host" class="scrollbar-thin"></div>
     </section>
   </div>
 
@@ -380,6 +409,7 @@
             <div class="flex gap-1 p-1 bg-black/20 border border-white/[.05] rounded-xl overflow-x-auto">
               <button data-artist-panel="collaborations" onclick="showArtistPanel('collaborations')" class="artist-panel-btn active flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg bg-white/[.06] text-white">Colaborações</button>
               <button data-artist-panel="solo" onclick="showArtistPanel('solo')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Solo</button>
+              <button data-artist-panel="collaborators" onclick="showArtistPanel('collaborators')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Colaboradores</button>
               <button data-artist-panel="albums" onclick="showArtistPanel('albums')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Álbuns</button>
               <button data-artist-panel="production" onclick="showArtistPanel('production')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Produção</button>
               <button data-artist-panel="composition" onclick="showArtistPanel('composition')" class="artist-panel-btn flex-1 min-w-max px-2.5 py-2 text-[11px] rounded-lg text-gray-500">Composição</button>
@@ -403,6 +433,18 @@
                 </select>
               </div>
               <ul id="artist-solo-list" class="space-y-2 text-sm"></ul>
+            </div>
+            <div id="artist-panel-collaborators" class="artist-subpanel hidden">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Artistas que colaboraram</h3>
+                  <p class="text-[10px] text-gray-600 mt-0.5">Somente artistas que dividiram interpretação em uma faixa.</p>
+                </div>
+                <select id="artist-collaborators-sort" onchange="updateArtistPanelSort('collaborators', this.value)" class="bg-black/30 border border-white/[.07] rounded-lg px-2 py-1 text-[10px] text-gray-300 focus:outline-none">
+                  <option value="tracks">Mais faixas</option><option value="recent">Mais recente</option><option value="az">A–Z</option><option value="za">Z–A</option>
+                </select>
+              </div>
+              <div id="artist-collaborators-list" class="mg-collaborators-grid"></div>
             </div>
             <div id="artist-panel-albums" class="artist-subpanel hidden">
               <div class="flex items-center justify-between gap-2 mb-3">
@@ -448,7 +490,7 @@
               <div class="min-w-0 flex-1 pb-1">
                 <div class="flex items-center gap-2 mb-2"><span class="text-[10px] uppercase tracking-[.18em] text-brand-cyan font-semibold">Faixa</span><span id="link-year" class="text-[10px] text-gray-500 font-mono">2023</span></div>
                 <h2 id="link-track-title" class="text-lg font-bold text-white">Nome da Faixa</h2>
-                <div id="link-hero-album" class="text-xs text-gray-500 mt-1 truncate">Álbum / projeto</div>
+                <button id="link-hero-album" type="button" onclick="openCurrentLinkAlbum()" class="album-link text-xs text-gray-500 mt-1 truncate block max-w-full">Álbum / projeto</button>
               </div>
             </div>
 
@@ -460,7 +502,7 @@
             <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-800">
               <div class="bg-gray-950/60 border border-gray-800 rounded p-2">
                 <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Álbum / Projeto</div>
-                <div id="link-album" class="text-gray-200">—</div>
+                <button id="link-album" type="button" onclick="openCurrentLinkAlbum()" class="album-link text-gray-200">—</button>
               </div>
               <div class="bg-gray-950/60 border border-gray-800 rounded p-2">
                 <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Tipo</div>
@@ -541,10 +583,30 @@
       </div>
 
       <!-- TAB 2: ADD NEW DATA -->
-      <div id="tab-add" class="hidden space-y-6">
+      <div id="tab-add" class="hidden space-y-4">
+        <div id="add-mode-chooser" class="space-y-3">
+          <div>
+            <div class="text-[10px] uppercase tracking-[.18em] text-gray-500">Adicionar</div>
+            <h3 class="text-base font-semibold text-white mt-1">O que você quer adicionar?</h3>
+            <p class="text-[11px] text-gray-500 mt-1">Escolha uma opção para abrir somente o formulário necessário.</p>
+          </div>
+          <div class="mg-add-choice-grid">
+            <button type="button" class="mg-add-choice" onclick="showAddMode('artist')">
+              <span class="mg-add-choice-icon"><i data-lucide="user-plus" class="w-5 h-5 text-violet-300"></i></span>
+              <div class="text-sm font-semibold text-white">Artista</div>
+              <div class="text-[10px] text-gray-500 mt-1">Cadastrar um novo artista.</div>
+            </button>
+            <button type="button" class="mg-add-choice" onclick="showAddMode('track')">
+              <span class="mg-add-choice-icon"><i data-lucide="music-2" class="w-5 h-5 text-cyan-300"></i></span>
+              <div class="text-sm font-semibold text-white">Faixa</div>
+              <div class="text-[10px] text-gray-500 mt-1">Cadastrar solo ou colaboração.</div>
+            </button>
+          </div>
+        </div>
         
         <!-- Add Artist -->
-        <form id="add-artist-form" onsubmit="handleAddArtist(event)" class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+        <form id="add-artist-form" onsubmit="handleAddArtist(event)" class="hidden space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <button type="button" class="mg-add-back" onclick="showAddMode(null)"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span>Escolher outro tipo</span></button>
           <h3 class="text-xs font-bold text-brand-accent uppercase tracking-wider flex items-center space-x-1">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
             <span>Novo Artista (Busca Spotify)</span>
@@ -575,7 +637,8 @@
         </form>
 
         <!-- Add Link -->
-        <form id="add-link-form" onsubmit="handleAddLink(event)" class="space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+        <form id="add-link-form" onsubmit="handleAddLink(event)" class="hidden space-y-3 bg-gray-900/40 p-3 rounded-lg border border-gray-800">
+          <button type="button" class="mg-add-back" onclick="showAddMode(null)"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span>Escolher outro tipo</span></button>
           <h3 class="text-xs font-bold text-brand-cyan uppercase tracking-wider flex items-center space-x-1">
             <i data-lucide="link-2" class="w-4 h-4"></i>
             <span>Nova Faixa / Colaboração</span>
@@ -893,6 +956,21 @@
       el.classList.toggle('hidden', nowHidden);
       if (button) button.querySelector('span').textContent = nowHidden ? (id.includes('artist') ? 'Editar artista' : 'Editar faixa') : 'Fechar edição';
     }
+    function showAddMode(mode=null) {
+      const chooser = document.getElementById('add-mode-chooser');
+      const artistForm = document.getElementById('add-artist-form');
+      const trackForm = document.getElementById('add-link-form');
+      chooser?.classList.toggle('hidden', !!mode);
+      artistForm?.classList.toggle('hidden', mode !== 'artist');
+      trackForm?.classList.toggle('hidden', mode !== 'track');
+      lucide.createIcons();
+    }
+
+    function openCurrentLinkAlbum() {
+      if (!selectedLink?.album) return;
+      globalOpenAlbum(encodeURIComponent(selectedLink.album));
+    }
+
     function showArtistPanel(panel='collaborations') {
       document.querySelectorAll('.artist-subpanel').forEach(el => el.classList.add('hidden'));
       document.getElementById(`artist-panel-${panel}`)?.classList.remove('hidden');
@@ -901,7 +979,7 @@
         btn.classList.toggle('active', active); btn.classList.toggle('bg-white/[.06]', active); btn.classList.toggle('text-white', active); btn.classList.toggle('text-gray-500', !active);
       });
     }
-    const artistPanelSort = { collaborations: 'recent', solo: 'recent', albums: 'recent', production: 'recent', composition: 'recent', lyrics: 'recent', arrangement: 'recent' };
+    const artistPanelSort = { collaborations: 'recent', solo: 'recent', collaborators: 'tracks', albums: 'recent', production: 'recent', composition: 'recent', lyrics: 'recent', arrangement: 'recent' };
     function updateArtistPanelSort(panel, value) {
       artistPanelSort[panel] = value;
       const activePanel = document.querySelector('.artist-panel-btn.active')?.dataset.artistPanel || panel;
@@ -929,6 +1007,7 @@
 
     function openSettingsModule() {
       ensureSettingsModuleMounted();
+      ensureEditTrackModuleMounted();
       document.getElementById('settings-overlay')?.classList.remove('hidden');
       lucide.createIcons();
     }
@@ -946,21 +1025,27 @@
     function openSettingsDrawer() { openSettingsModule(); }
     function openAdminDrawer() { openAdminModule(); }
 
+    function ensureEditTrackModuleMounted() {
+      const form = document.getElementById('edit-link-form');
+      const host = document.getElementById('edit-track-module-host');
+      if (form && host && form.parentElement !== host) host.appendChild(form);
+    }
+
     function enterLinkEditMode() {
       if (!selectedLink) return;
-      const panel = document.getElementById('link-details');
-      const form = document.getElementById('edit-link-form');
-      if (!panel || !form) return;
+      ensureEditTrackModuleMounted();
       renderEditLinkCredits(selectedLink);
-      panel.classList.add('link-edit-mode');
-      form.classList.remove('hidden');
-      panel.closest('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+      const form = document.getElementById('edit-link-form');
+      const title = document.getElementById('edit-track-module-title');
+      if (title) title.textContent = selectedLink.track ? `Editar • ${selectedLink.track}` : 'Editar faixa';
+      form?.classList.remove('hidden');
+      document.getElementById('edit-track-overlay')?.classList.remove('hidden');
+      document.getElementById('edit-track-module-host')?.scrollTo({ top:0, behavior:'instant' });
       lucide.createIcons();
     }
 
     function exitLinkEditMode() {
-      document.getElementById('link-details')?.classList.remove('link-edit-mode');
-      document.getElementById('edit-link-form')?.classList.add('hidden');
+      document.getElementById('edit-track-overlay')?.classList.add('hidden');
     }
     function setTopNav(id) {
       document.querySelectorAll('.mg-nav-btn').forEach(b => b.classList.remove('active'));
@@ -2079,7 +2164,7 @@
               ${c.albumImage ? `<img src="${c.albumImage}" class="w-10 h-10 rounded-lg object-cover border border-white/[.06] flex-none">` : `<div class="w-10 h-10 rounded-lg bg-white/[.025] border border-white/[.06] grid place-items-center flex-none"><i data-lucide="music-2" class="w-4 h-4 ${accentClass}"></i></div>`}
               <div class="min-w-0">
                 <div class="font-semibold text-gray-200 truncate">${c.track || 'Colaboração'}</div>
-                <div class="text-xs text-gray-500 truncate">${partnerNames ? 'com ' + partnerNames + ' • ' : ''}${c.album ? c.album + ' • ' : ''}${c.year || 'N/A'}</div>
+                <div class="text-xs text-gray-500 truncate">${partnerNames ? 'com ' + partnerNames + ' • ' : ''}${c.album ? `<button type=\"button\" class=\"album-link\" onclick=\"event.stopPropagation();globalOpenAlbum('${encodeURIComponent(c.album)}')\">${escapeHtml(c.album)}</button> • ` : ''}${c.year || 'N/A'}</div>
               </div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-700"></i>
@@ -2088,7 +2173,7 @@
         });
       }
 
-      const panelSortIds = ['collaborations','solo','production','composition','lyrics','arrangement','albums'];
+      const panelSortIds = ['collaborations','solo','collaborators','production','composition','lyrics','arrangement','albums'];
       panelSortIds.forEach(key => { const el = document.getElementById(`artist-${key}-sort`); if (el) el.value = artistPanelSort[key]; });
       renderArtistCreditList('artist-collaborations-list', byRole.collaborations, 'text-brand-pink', artistPanelSort.collaborations);
       renderArtistCreditList('artist-solo-list', byRole.solo, 'text-emerald-300', artistPanelSort.solo);
@@ -2096,6 +2181,45 @@
       renderArtistCreditList('artist-composition-list', byRole.composition, 'text-violet-300', artistPanelSort.composition);
       renderArtistCreditList('artist-lyrics-list', byRole.lyrics, 'text-rose-300', artistPanelSort.lyrics);
       renderArtistCreditList('artist-arrangement-list', byRole.arrangement, 'text-blue-300', artistPanelSort.arrangement);
+
+      const collaboratorMap = new Map();
+      byRole.collaborations.forEach(c => {
+        const performerIds = (c.artists || []).map(a => typeof a === 'object' ? a.id : a);
+        performerIds.filter(id => id !== node.id).forEach(id => {
+          if (!collaboratorMap.has(id)) collaboratorMap.set(id, { id, tracks: [], latestYear: 0 });
+          const entry = collaboratorMap.get(id);
+          entry.tracks.push(c);
+          entry.latestYear = Math.max(entry.latestYear || 0, c.year || 0);
+        });
+      });
+      const collaboratorsList = document.getElementById('artist-collaborators-list');
+      if (collaboratorsList) {
+        collaboratorsList.innerHTML = '';
+        let collaborators = [...collaboratorMap.values()].map(entry => ({ ...entry, artist: graphData.nodes.find(n => n.id === entry.id) }));
+        const mode = artistPanelSort.collaborators;
+        collaborators.sort((a,b) => {
+          const an = a.artist?.name || a.id, bn = b.artist?.name || b.id;
+          if (mode === 'az') return an.localeCompare(bn);
+          if (mode === 'za') return bn.localeCompare(an);
+          if (mode === 'recent') return (b.latestYear||0)-(a.latestYear||0) || an.localeCompare(bn);
+          return b.tracks.length-a.tracks.length || an.localeCompare(bn);
+        });
+        if (!collaborators.length) {
+          collaboratorsList.innerHTML = '<div class="col-span-3 text-xs text-gray-600 italic">Nenhum colaborador cadastrado ainda.</div>';
+        } else collaborators.forEach(entry => {
+          const artist = entry.artist;
+          if (!artist) return;
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = 'mg-collaborator-card';
+          card.onclick = () => selectNode(artist);
+          card.innerHTML = `
+            <div class="mg-collaborator-avatar" style="${artist.image ? `background-image:url('${escapeHtml(artist.image)}')` : ''}">${artist.image ? '' : escapeHtml((artist.name||'?').charAt(0).toUpperCase())}</div>
+            <div class="text-[11px] font-semibold text-gray-200 truncate">${escapeHtml(artist.name)}</div>
+            <div class="text-[9px] text-gray-500 mt-1">${entry.tracks.length} faixa${entry.tracks.length===1?'':'s'} junto${entry.tracks.length===1?'':'s'}</div>`;
+          collaboratorsList.appendChild(card);
+        });
+      }
 
       const albumsList = document.getElementById('artist-albums-list');
       albumsList.innerHTML = '';
@@ -3368,6 +3492,7 @@
 
       document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
       document.getElementById(`tab-${tab}-btn`)?.classList.add('border-brand-accent', 'text-brand-accent');
+      if (tab === 'add') showAddMode(null);
     }
 
     function handleSearch() {
@@ -3413,6 +3538,7 @@
   
     document.addEventListener('DOMContentLoaded', () => {
       ensureSettingsModuleMounted();
+      ensureEditTrackModuleMounted();
     });
 </script>
 </body>
